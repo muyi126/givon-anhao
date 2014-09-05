@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <RelativeLayout 
+        android:background="@drawable/white_bg_small"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="30dip"
+        >
+        <ImageView 
+            android:id="@+id/image_1"
+            android:layout_width="200dip"
+            android:layout_height="200dip"
+            android:src="@drawable/welcome_page_2"
+            android:layout_centerHorizontal="true"
+            />
+        <Button
+            android:id="@+id/sinaStart" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/qq_button"
+            android:layout_below="@id/image_1"
+            android:layout_margin="10dip"
+            />
+        
+    </RelativeLayout>
+	
+
+</LinearLayout>
