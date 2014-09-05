@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <ScrollView 
+        android:layout_width="match_parent"
+        android:layout_height="255dip"
+        android:background="@drawable/white_bg_small"
+        android:layout_marginTop="30dip"
+        android:layout_marginBottom="15dip"
+        android:layout_marginLeft="30dip"
+        android:layout_marginRight="30dip"
+        >
+    <RelativeLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <EditText 
+            android:id="@+id/user"
+            android:layout_width="fill_parent"
+            android:layout_height="50dip"
+            android:background="@drawable/page4_bg_line"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
+            android:drawableLeft="@drawable/user_icon"
+            android:paddingLeft="7dip"
+            android:drawablePadding="15dip"
+            android:hint="用户名"
+            />
+        <EditText 
+            android:layout_below="@id/user"
+            android:id="@+id/password"
+            android:layout_width="fill_parent"
+            android:layout_height="50dip"
+            android:background="@drawable/page4_bg_line_e"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
+            android:drawableLeft="@drawable/mima_icon"
+            android:paddingLeft="7dip"
+            android:drawablePadding="15dip"
+            android:hint="密码"
+            />
+        
+        <Button 
+            android:layout_below="@id/password"
+            android:id="@+id/login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/login_button"
+            android:layout_marginTop="30dip"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
+            android:layout_marginBottom="10dip"
+            />
+        
+        
+    </RelativeLayout>
+	</ScrollView>
+
+</LinearLayout>
