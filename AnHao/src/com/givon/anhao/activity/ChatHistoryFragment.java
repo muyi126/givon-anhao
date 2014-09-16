@@ -16,10 +16,13 @@ package com.givon.anhao.activity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -46,6 +49,7 @@ import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseFragment;
 import com.givon.anhao.R;
 import com.givon.anhao.adapter.ChatHistoryAdapter;
+import com.givon.anhao.domain.User;
 import com.givon.baseproject.entity.UserBean;
 import com.givon.baseproject.view.PullListView;
 import com.givon.baseproject.view.PullListView.PullListViewListener;
@@ -54,19 +58,27 @@ import com.givon.baseproject.view.PullListView.PullListViewListener;
  * 聊天记录Fragment
  * 
  */
-public class ChatHistoryFragment extends BaseFragment implements PullListViewListener{
+public class ChatHistoryFragment extends BaseFragment implements PullListViewListener {
 
 	private InputMethodManager inputMethodManager;
 	private PullListView listView;
-	private Map<String, UserBean> contactList;
+	private HashMap<String, UserBean> contactList;
+	private Map<String, User> contactListOld;
+	private HashMap<String, UserBean> yeContactList;
 	private ChatHistoryAdapter adapter;
-//	private EditText query;
+	// private EditText query;
 	private ImageButton clearSearch;
 	public RelativeLayout errorItem;
 	public TextView errorText;
 	private boolean hidden;
-//	private AppTitleBar mAppTitleBar;
+	public boolean isCreat = false;
 
+	// private AppTitleBar mAppTitleBar;
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		contactListOld = AnhaoApplication.getInstance().getHelloContactList();
+	}
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.fragment_conversation_history, container, false);
@@ -75,40 +87,43 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+		inputMethodManager = (InputMethodManager) getActivity().getSystemService(
+				Context.INPUT_METHOD_SERVICE);
 		errorItem = (RelativeLayout) getView().findViewById(R.id.rl_error_item);
 		errorText = (TextView) errorItem.findViewById(R.id.tv_connect_errormsg);
-//		mAppTitleBar = (AppTitleBar) getView().findViewById(R.id.titlebar);
+		// mAppTitleBar = (AppTitleBar) getView().findViewById(R.id.titlebar);
 		// contact list
-		contactList = AnhaoApplication.getInstance().getContactList();
+		// contactList = AnhaoApplication.getInstance().getContactList();
+		// yeContactList = AnhaoApplication.getInstance().getYeList();
+		contactListOld = AnhaoApplication.getInstance().getHelloContactList();
 		listView = (PullListView) getView().findViewById(R.id.id_pull_listview);
 		listView.setHeaderDividersEnabled(true);
-		listView.setFooterDividersEnabled(true);
+		listView.setFooterDividersEnabled(false);
 		listView.setSelector(android.R.color.transparent);
 		adapter = new ChatHistoryAdapter(getActivity(), loadUsersWithRecentChat());
 		// 设置adapter
 		listView.setAdapter(adapter);
-//		listView.setOnItemClickListener(new OnItemClickListener() {
-//
-//			@Override
-//			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//				EMContact emContact = adapter.getItem(position);
-//				if (adapter.getItem(position).getUsername().equals(AnhaoApplication.getInstance().getUserName()))
-//					Toast.makeText(getActivity(), "不能和自己聊天", 0).show();
-//				else {
-//					// 进入聊天页面
-//					  Intent intent = new Intent(getActivity(), ChatActivity.class);
-//					 if (emContact instanceof EMGroup) {
-//		                    intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
-//		                    intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
-//		                } else {
-//		                    intent.putExtra("userId", emContact.getUsername());
-//		                } 
-//					startActivity(intent);
-//				}
-//			}
-//		});
-		
+		// listView.setOnItemClickListener(new OnItemClickListener() {
+		//
+		// @Override
+		// public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+		// EMContact emContact = adapter.getItem(position);
+		// if (adapter.getItem(position).getUsername().equals(AnhaoApplication.getInstance().getUserName()))
+		// Toast.makeText(getActivity(), "不能和自己聊天", 0).show();
+		// else {
+		// // 进入聊天页面
+		// Intent intent = new Intent(getActivity(), ChatActivity.class);
+		// if (emContact instanceof EMGroup) {
+		// intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
+		// intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
+		// } else {
+		// intent.putExtra("userId", emContact.getUsername());
+		// }
+		// startActivity(intent);
+		// }
+		// }
+		// });
+
 		// 注册上下文菜单
 		registerForContextMenu(listView);
 
@@ -119,40 +134,40 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 				// 隐藏软键盘
 				if (getActivity().getWindow().getAttributes().softInputMode != WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN) {
 					if (getActivity().getCurrentFocus() != null)
-						inputMethodManager.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(),
-								InputMethodManager.HIDE_NOT_ALWAYS);
+						inputMethodManager.hideSoftInputFromWindow(getActivity().getCurrentFocus()
+								.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 				}
 				return false;
 			}
 		});
 		// 搜索框
-//		query = (EditText) getView().findViewById(R.id.query);
-//		// 搜索框中清除button
-//		clearSearch = (ImageButton) getView().findViewById(R.id.search_clear);
-//		query.addTextChangedListener(new TextWatcher() {
-//			public void onTextChanged(CharSequence s, int start, int before, int count) {
-//				
-//				adapter.getFilter().filter(s);
-//				if (s.length() > 0) {
-//					clearSearch.setVisibility(View.VISIBLE);
-//				} else {
-//					clearSearch.setVisibility(View.INVISIBLE);
-//				}
-//			}
-//
-//			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//			}
-//
-//			public void afterTextChanged(Editable s) {
-//			}
-//		});
-//		clearSearch.setOnClickListener(new OnClickListener() {
-//			@Override
-//			public void onClick(View v) {
-//				query.getText().clear();
-//
-//			}
-//		});
+		// query = (EditText) getView().findViewById(R.id.query);
+		// // 搜索框中清除button
+		// clearSearch = (ImageButton) getView().findViewById(R.id.search_clear);
+		// query.addTextChangedListener(new TextWatcher() {
+		// public void onTextChanged(CharSequence s, int start, int before, int count) {
+		//
+		// adapter.getFilter().filter(s);
+		// if (s.length() > 0) {
+		// clearSearch.setVisibility(View.VISIBLE);
+		// } else {
+		// clearSearch.setVisibility(View.INVISIBLE);
+		// }
+		// }
+		//
+		// public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+		// }
+		//
+		// public void afterTextChanged(Editable s) {
+		// }
+		// });
+		// clearSearch.setOnClickListener(new OnClickListener() {
+		// @Override
+		// public void onClick(View v) {
+		// query.getText().clear();
+		//
+		// }
+		// });
 
 	}
 
@@ -167,17 +182,19 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.delete_message) {
-			EMContact tobeDeleteUser = adapter.getItem(((AdapterContextMenuInfo) item.getMenuInfo()).position);
+			EMContact tobeDeleteUser = adapter
+					.getItem(((AdapterContextMenuInfo) item.getMenuInfo()).position);
 			// 删除此会话
-			System.out.println("position:"+((AdapterContextMenuInfo)item.getMenuInfo()).position);
-//			EMChatManager.getInstance().deleteConversation(tobeDeleteUser.getUsername());
-//			InviteMessgeDao inviteMessgeDao = new InviteMessgeDao(getActivity());
-//			inviteMessgeDao.deleteMessage(tobeDeleteUser.getUsername());
-//			adapter.remove(tobeDeleteUser);
-//			adapter.notifyDataSetChanged();
-//
-//			// 更新消息未读数
-//			((AnhaoMainActivity) getActivity()).updateUnreadLabel();
+			System.out
+					.println("position:" + ((AdapterContextMenuInfo) item.getMenuInfo()).position);
+			// EMChatManager.getInstance().deleteConversation(tobeDeleteUser.getUsername());
+			// InviteMessgeDao inviteMessgeDao = new InviteMessgeDao(getActivity());
+			// inviteMessgeDao.deleteMessage(tobeDeleteUser.getUsername());
+			// adapter.remove(tobeDeleteUser);
+			// adapter.notifyDataSetChanged();
+			//
+			// // 更新消息未读数
+			// ((AnhaoMainActivity) getActivity()).updateUnreadLabel();
 
 			return true;
 		}
@@ -200,20 +217,45 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 	 * @return
 	 */
 	private List<EMContact> loadUsersWithRecentChat() {
+		// List<EMContact> resultList = new ArrayList<EMContact>();
+		// // for (UserBean user : contactList.values()) {
+//		 Hashtable<String, EMConversation> conversation = EMChatManager.getInstance().getAllConversations();
+//		 for (EMConversation e : conversation.values()) {
+//		 System.out.println(e.getUserName());
+//		 }
+		// if (conversation.getMsgCount() > 0) {
+		// resultList.add(user);
+		// }
+		// }
+		// for (UserBean user : contactList.values()) {
+		// EMConversation conversation = EMChatManager.getInstance().getConversation(user.getUsername());
+		// if (conversation.getMsgCount() > 0) {
+		// resultList.add(user);
+		// }
+		// }
+		// for(EMGroup group : EMGroupManager.getInstance().getAllGroups()){
+		// EMConversation conversation = EMChatManager.getInstance().getConversation(group.getGroupId());
+		// if(conversation.getMsgCount() > 0){
+		// resultList.add(group);
+		// }
+		//
+		// }
 		List<EMContact> resultList = new ArrayList<EMContact>();
-		for (UserBean user : contactList.values()) {
-			EMConversation conversation = EMChatManager.getInstance().getConversation(user.getUsername());
+		for (User user : contactListOld.values()) {
+			EMConversation conversation = EMChatManager.getInstance().getConversation(
+					user.getUsername());
 			if (conversation.getMsgCount() > 0) {
 				resultList.add(user);
 			}
 		}
-		for(EMGroup group : EMGroupManager.getInstance().getAllGroups()){
-			EMConversation conversation = EMChatManager.getInstance().getConversation(group.getGroupId());
-			if(conversation.getMsgCount() > 0){
-				resultList.add(group);
-			}
-			
-		}
+//		for (EMGroup group : EMGroupManager.getInstance().getAllGroups()) {
+//			EMConversation conversation = EMChatManager.getInstance().getConversation(
+//					group.getGroupId());
+//			if (conversation.getMsgCount() > 0) {
+//			resultList.add(group);
+//			}
+//
+//		}
 		// 排序
 		sortUserByLastChatTime(resultList);
 		return resultList;
@@ -228,8 +270,10 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 		Collections.sort(contactList, new Comparator<EMContact>() {
 			@Override
 			public int compare(final EMContact user1, final EMContact user2) {
-				EMConversation conversation1 = EMChatManager.getInstance().getConversation(user1.getUsername());
-				EMConversation conversation2 = EMChatManager.getInstance().getConversation(user2.getUsername());
+				EMConversation conversation1 = EMChatManager.getInstance().getConversation(
+						user1.getUsername());
+				EMConversation conversation2 = EMChatManager.getInstance().getConversation(
+						user2.getUsername());
 
 				EMMessage user2LastMessage = conversation2.getLastMessage();
 				EMMessage user1LastMessage = conversation1.getLastMessage();
@@ -265,14 +309,13 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 	@Override
 	public void onPullRefresh() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void onPullLoadMore() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
-	
+
 }

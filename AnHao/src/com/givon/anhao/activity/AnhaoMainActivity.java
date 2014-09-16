@@ -54,10 +54,13 @@ import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseFragmentActivity;
 import com.givon.anhao.Constant;
 import com.givon.anhao.R;
+import com.givon.anhao.db.HelloUserDao;
 import com.givon.anhao.db.InviteMessgeDao;
 import com.givon.anhao.db.UserDao;
+import com.givon.anhao.db.UserDaoOld;
 import com.givon.anhao.domain.InviteMessage;
 import com.givon.anhao.domain.InviteMessage.InviteMesageStatus;
+import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.CommonUtils;
 import com.givon.baseproject.entity.UserBean;
 import com.givon.baseproject.util.ToastUtil;
@@ -159,7 +162,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		registerReceiver(mReceiver, iFilter);
 
 		inviteMessgeDao = new InviteMessgeDao(this);
-		userDao = new UserDao(this);
+		userDao = new UserDaoOld(this);
 		chatHistoryFragment = new ChatHistoryFragment();
 		// contactListFragment = new ContactlistFragment();
 		groupFragment = new GroupFragment();
@@ -187,9 +190,11 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		fragments = new Fragment[] { groupFragment, chatHistoryFragment };
 		// 添加显示第一个fragment
 		getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, groupFragment)
-				.show(groupFragment).commit();
+				.add(R.id.fragment_container, chatHistoryFragment).hide(chatHistoryFragment).show(groupFragment).commit();
 		mSlideMenu.clearIgnoredViewList();
 
+		
+		
 		// 注册一个接收消息的BroadcastReceiver
 		msgReceiver = new NewMessageBroadcastReceiver();
 		IntentFilter intentFilter = new IntentFilter(EMChatManager.getInstance()
@@ -361,8 +366,8 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 	 */
 	public int getUnreadAddressCountTotal() {
 		int unreadAddressCountTotal = 0;
-		if (AnhaoApplication.getInstance().getContactList().get(Constant.NEW_FRIENDS_USERNAME) != null) {
-			unreadAddressCountTotal = AnhaoApplication.getInstance().getContactList()
+		if (AnhaoApplication.getInstance().getContactListOld().get(Constant.NEW_FRIENDS_USERNAME) != null) {
+			unreadAddressCountTotal = AnhaoApplication.getInstance().getContactListOld()
 					.get(Constant.NEW_FRIENDS_USERNAME).getUnreadMsgCount();
 		}
 		return unreadAddressCountTotal;
@@ -390,16 +395,54 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 			// 消息id
 			String msgId = intent.getStringExtra("msgid");
 			// 收到这个广播的时候，message已经在db和内存里了，可以通过id获取mesage对象
-			// EMMessage message =
-			// EMChatManager.getInstance().getMessage(msgId);
-
+			EMMessage message = EMChatManager.getInstance().getMessage(msgId);
+			System.out.println("NewMessageBroadcastReceiver:");
+			if (ChatType.Chat.name().equals(message.getChatType().name())) {
+				Map<String, User> localUsers = AnhaoApplication.getInstance().getHelloContactList();
+				Map<String, User> toAddUsers = new HashMap<String, User>();
+				if (!localUsers.containsKey(message.getFrom())) {
+					HelloUserDao dao = new HelloUserDao(context);
+					User user = new User();
+					user.setUsername(message.getFrom());
+					String headerName = null;
+					if (!TextUtils.isEmpty(user.getNick())) {
+						headerName = user.getNick();
+					} else {
+						headerName = user.getUsername();
+					}
+					if (message.getFrom().equals(Constant.NEW_FRIENDS_USERNAME)) {
+						user.setHeader("");
+					} else if (Character.isDigit(headerName.charAt(0))) {
+						user.setHeader("#");
+					} else {
+						user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
+								.get(0).target.substring(0, 1).toUpperCase());
+						char header = user.getHeader().toLowerCase().charAt(0);
+						if (header < 'a' || header > 'z') {
+							user.setHeader("#");
+						}
+					}
+					// 暂时有个bug，添加好友时可能会回调added方法两次
+					if (!localUsers.containsKey(message.getFrom())) {
+						dao.saveContact(user);
+					}
+					try {
+						System.out.println("BroadcastReceiver:"
+								+ ((TextMessageBody) message.getBody()).getMessage());
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+					toAddUsers.put(message.getFrom(), user);
+					localUsers.putAll(toAddUsers);
+				}
+			}
 			// 刷新bottom bar消息未读数
 			updateUnreadLabel();
 			if (currentTabIndex == 0) {
 				// 当前页面如果为聊天历史页面，刷新此页面
-				// if (chatHistoryFragment != null) {
-				// chatHistoryFragment.refresh();
-				// }
+				if (chatHistoryFragment != null) {
+					chatHistoryFragment.refresh();
+				}
 			}
 			// 注销广播，否则在ChatActivity中会收到这个广播
 			abortBroadcast();
@@ -428,7 +471,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 	};
 
 	private InviteMessgeDao inviteMessgeDao;
-	private UserDao userDao;
+	private UserDaoOld userDao;
 
 	/***
 	 * 联系人变化listener
@@ -439,10 +482,10 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		@Override
 		public void onContactAdded(List<String> usernameList) {
 			// 保存增加的联系人
-			Map<String, UserBean> localUsers = AnhaoApplication.getInstance().getContactList();
-			Map<String, UserBean> toAddUsers = new HashMap<String, UserBean>();
+			Map<String, User> localUsers = AnhaoApplication.getInstance().getContactListOld();
+			Map<String, User> toAddUsers = new HashMap<String, User>();
 			for (String username : usernameList) {
-				UserBean user = new UserBean();
+				User user = new User();
 				user.setUsername(username);
 				String headerName = null;
 				if (!TextUtils.isEmpty(user.getNick())) {
@@ -478,7 +521,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		@Override
 		public void onContactDeleted(List<String> usernameList) {
 			// 被删除
-			Map<String, UserBean> localUsers = AnhaoApplication.getInstance().getContactList();
+			Map<String, User> localUsers = AnhaoApplication.getInstance().getContactListOld();
 			for (String username : usernameList) {
 				localUsers.remove(username);
 				userDao.deleteContact(username);
@@ -563,7 +606,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		// 保存msg
 		inviteMessgeDao.saveMessage(msg);
 		// 未读数加1
-		UserBean user = AnhaoApplication.getInstance().getContactList()
+		User user = AnhaoApplication.getInstance().getContactListOld()
 				.get(Constant.NEW_FRIENDS_USERNAME);
 		user.setUnreadMsgCount(user.getUnreadMsgCount() + 1);
 	}
@@ -760,7 +803,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 				mSlideMenu.closeMenu();
 				return true;
 			} else {
-//				moveTaskToBack(false);
+				// moveTaskToBack(false);
 				finish();
 				return true;
 			}

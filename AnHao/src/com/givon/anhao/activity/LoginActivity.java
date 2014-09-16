@@ -16,7 +16,6 @@ package com.givon.anhao.activity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -39,6 +38,8 @@ import com.givon.anhao.BaseActivity;
 import com.givon.anhao.Constant;
 import com.givon.anhao.R;
 import com.givon.anhao.db.UserDao;
+import com.givon.anhao.db.UserDaoOld;
+import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.CommonUtils;
 import com.givon.baseproject.entity.UserBean;
 
@@ -128,31 +129,31 @@ public class LoginActivity extends BaseActivity {
 					try {
 						// demo中简单的处理成每次登陆都去获取好友username，开发者自己根据情况而定
 						List<String> usernames = EMChatManager.getInstance().getContactUserNames();
-						Map<String, UserBean> userlist = new HashMap<String, UserBean>();
+						HashMap<String, User> userlist = new HashMap<String, User>();
 						for (String username : usernames) {
-							UserBean user = new UserBean();
+							User user = new User();
 							user.setUsername(username);
 							setUserHearder(username, user);
 							userlist.put(username, user);
 						}
 						// 添加user"申请与通知"
-						UserBean newFriends = new UserBean();
+						User newFriends = new User();
 						newFriends.setUsername(Constant.NEW_FRIENDS_USERNAME);
 						newFriends.setNick("申请与通知");
 						newFriends.setHeader("");
 						userlist.put(Constant.NEW_FRIENDS_USERNAME, newFriends);
 						// 添加"群聊"
-						UserBean groupUser = new UserBean();
+						User groupUser = new User();
 						groupUser.setUsername(Constant.GROUP_USERNAME);
 						groupUser.setNick("群聊");
 						groupUser.setHeader("");
 						userlist.put(Constant.GROUP_USERNAME, groupUser);
 
 						// 存入内存
-						AnhaoApplication.getInstance().setContactList(userlist);
+						AnhaoApplication.getInstance().setContactListOld(userlist);
 						// 存入db
-						UserDao dao = new UserDao(LoginActivity.this);
-						List<UserBean> users = new ArrayList<UserBean>(userlist.values());
+						UserDaoOld dao = new UserDaoOld(LoginActivity.this);
+						List<User> users = new ArrayList<User>(userlist.values());
 						dao.saveContactList(users);
 
 						// 获取群聊列表,sdk会把群组存入到EMGroupManager和db中
@@ -219,7 +220,7 @@ public class LoginActivity extends BaseActivity {
 	 * @param username
 	 * @param user
 	 */
-	protected void setUserHearder(String username, UserBean user) {
+	protected void setUserHearder(String username, User user) {
 		String headerName = null;
 		if (!TextUtils.isEmpty(user.getNick())) {
 			headerName = user.getNick();

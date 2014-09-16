@@ -13,6 +13,7 @@
  */
 package com.givon.anhao;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -47,11 +49,17 @@ import com.easemob.chat.OnNotificationClickListener;
 import com.givon.anhao.activity.ChatActivity;
 import com.givon.anhao.activity.MainActivity;
 import com.givon.anhao.db.DbOpenHelper;
+import com.givon.anhao.db.HelloUserDao;
 import com.givon.anhao.db.UserDao;
+import com.givon.anhao.db.UserDaoOld;
+import com.givon.anhao.db.YeUserDao;
+import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.PreferenceUtils;
 import com.givon.baseproject.entity.UserBean;
+import com.givon.baseproject.util.BitmapHelp;
 import com.givon.baseproject.util.ShareCookie;
 import com.givon.baseproject.util.StringUtil;
+import com.lidroid.xutils.BitmapUtils;
 import com.umeng.analytics.MobclickAgent;
 
 public class AnhaoApplication extends Application {
@@ -64,7 +72,10 @@ public class AnhaoApplication extends Application {
 	// login password
 	private static final String PREF_PWD = "pwd";
 	private String password = null;
-	private Map<String, UserBean> contactList;
+	private HashMap<String, UserBean> contactList;
+	private Map<String, User> contactListOld;
+	private Map<String, User> contactHelloList;
+	private HashMap<String, UserBean> yeContactList;
 	private static Typeface typeface;
 	private LocationManager locationManager;
 	private LocationListener locationListener;
@@ -76,6 +87,7 @@ public class AnhaoApplication extends Application {
 	private static BDLocation lastLocation = null;
 	private static double latitude = 30;
 	private static double longtitude = 104;
+	public static BitmapUtils bitmapUtils;
 
 	public static Typeface getTypeface() {
 		return typeface;
@@ -127,6 +139,10 @@ public class AnhaoApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		bitmapUtils = BitmapHelp.getBitmapUtils(this);
+		bitmapUtils.configDefaultLoadingImage(R.drawable.ic_launcher);
+		bitmapUtils.configDefaultLoadFailedImage(R.drawable.default_avatar);
+		bitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
 		typeface = Typeface.createFromAsset(getAssets(), "font/thisfont.otf");
 		int pid = android.os.Process.myPid();
 		String processAppName = getAppName(pid);
@@ -212,12 +228,61 @@ public class AnhaoApplication extends Application {
 	// List<String> list = new ArrayList<String>();
 	// list.add("1406713081205");
 	// options.setReceiveNotNoifyGroup(list);
+	
 	/**
 	 * 获取内存中好友user list
 	 * 
 	 * @return
 	 */
-	public Map<String, UserBean> getContactList() {
+	public Map<String, User> getContactListOld() {
+		if(getUserName() != null &&contactListOld == null)
+		{
+			UserDaoOld dao = new UserDaoOld(applicationContext);
+			// 获取本地好友user list到内存,方便以后获取好友list
+			contactListOld = dao.getContactList();
+		}
+		return contactListOld;
+	}
+	/**
+	 * 设置好友user list到内存中
+	 * 
+	 * @param contactList
+	 */
+	public void setContactListOld(Map<String, User> contactList) {
+		this.contactListOld = contactList;
+	}
+	
+	
+	/**
+	 * 获取内存中好友user list
+	 * 
+	 * @return
+	 */
+	public Map<String, User> getHelloContactList() {
+		if(getUserName() != null &&contactHelloList == null)
+		{
+			HelloUserDao dao = new HelloUserDao(applicationContext);
+			// 获取本地好友user list到内存,方便以后获取好友list
+			contactHelloList = dao.getContactList();
+		}
+		return contactHelloList;
+	}
+	/**
+	 * 设置好友user list到内存中
+	 * 
+	 * @param contactList
+	 */
+	public void setHelloContactList(Map<String, User> contactList) {
+		this.contactHelloList = contactList;
+	}
+	
+	
+	/**
+	 * 获取内存中好友user list
+	 * 
+	 * @return
+	 */
+	public HashMap<String, UserBean> getContactList() {
 		if (getUserName() != null && contactList == null) {
 			UserDao dao = new UserDao(applicationContext);
 			// 获取本地好友user list到内存,方便以后获取好友list
@@ -225,13 +290,44 @@ public class AnhaoApplication extends Application {
 		}
 		return contactList;
 	}
+	
+	
+	
+	/**
+	 * 获取内存中野招呼好友user list
+	 * 
+	 * @return
+	 */
+	public HashMap<String, UserBean> getYeList() {
+		if (getUserName() != null && yeContactList == null) {
+			// 获取本地好友user list到内存,方便以后获取好友list
+			if(contactList==null){
+				getContactList();
+			}
+			YeUserDao yeDao = new YeUserDao(applicationContext);
+			yeContactList = yeDao.getContactList();
+			for (UserBean user : contactList.values()) {
+				for(UserBean user2 : yeContactList.values()){
+					String userEid = user.getEid();
+					String userEid2 = user2.getEid();
+					if(!StringUtil.isEmpty(userEid)&&!StringUtil.isEmpty(userEid2)){
+						if(userEid.equals(userEid2)){
+							yeDao.deleteContact(userEid);
+							yeContactList.remove(userEid);
+						}
+					}
+				}
+			}
+		}
+		return yeContactList;
+	}
 
 	/**
 	 * 设置好友user list到内存中
 	 * 
 	 * @param contactList
 	 */
-	public void setContactList(Map<String, UserBean> contactList) {
+	public void setContactList(HashMap<String, UserBean> contactList) {
 		this.contactList = contactList;
 	}
 

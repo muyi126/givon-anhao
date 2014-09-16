@@ -26,6 +26,7 @@ import android.text.TextUtils;
 import com.easemob.util.HanziToPinyin;
 import com.givon.anhao.Constant;
 import com.givon.baseproject.entity.UserBean;
+import com.givon.baseproject.util.StringUtil;
 
 public class UserDao {
 	public static final String TABLE_NAME = "uers";
@@ -59,10 +60,40 @@ public class UserDao {
 			db.delete(TABLE_NAME, null, null);
 			for (UserBean user : contactList) {
 				ContentValues values = new ContentValues();
+				if (StringUtil.isEmpty(user.getEasemobId())) {
+					return;
+				}
 				values.put(COLUMN_NAME_EASEMOBID, user.getEasemobId());
-				if (user.getNick() != null){
+				if (!StringUtil.isEmpty(user.getNick())) {
 					values.put(COLUMN_NAME_NICK, user.getNick());
-					}
+				}
+				if (!StringUtil.isEmpty(user.getAvatar())) {
+					values.put(COLUMN_NAME_AVATAR, user.getAvatar());
+				}
+				if (!StringUtil.isEmpty(user.getEasemobPassword())) {
+					values.put(COLUMN_NAME_EASEMOBPASSWORD, user.getEasemobPassword());
+				}
+				if (!StringUtil.isEmpty(user.getFreeTime())) {
+					values.put(COLUMN_NAME_FREETIME, user.getFreeTime());
+				}
+				if (!StringUtil.isEmpty(user.getHeader())) {
+					values.put(COLUMN_NAME_HEADER, user.getHeader());
+				}
+				if (!StringUtil.isEmpty(user.getNickname())) {
+					values.put(COLUMN_NAME_NICK, user.getNickname());
+				}
+				if (!StringUtil.isEmpty(user.getPassword())) {
+					values.put(COLUMN_NAME_PASSWORD, user.getPassword());
+				}
+				if (!StringUtil.isEmpty(user.getToken())) {
+					values.put(COLUMN_NAME_TOKEN, user.getToken());
+				}
+				if (!StringUtil.isEmpty(user.getUserId())) {
+					values.put(COLUMN_NAME_USERID, user.getUserId());
+				}
+				if (!StringUtil.isEmpty(user.getUsername())) {
+					values.put(COLUMN_NAME_ID, user.getUsername());
+				}
 				db.insert(TABLE_NAME, null, values);
 			}
 		}
@@ -73,17 +104,24 @@ public class UserDao {
 	 * 
 	 * @return
 	 */
-	public Map<String, UserBean> getContactList() {
+	public HashMap<String, UserBean> getContactList() {
 		SQLiteDatabase db = dbHelper.getReadableDatabase();
-		Map<String, UserBean> users = new HashMap<String, UserBean>();
+		HashMap<String, UserBean> users = new HashMap<String, UserBean>();
 		if (db.isOpen()) {
 			Cursor cursor = db.rawQuery("select * from " + TABLE_NAME /* + " desc" */, null);
 			while (cursor.moveToNext()) {
+				String userId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_USERID));
 				String emId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_EASEMOBID));
 				String nick = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NICK));
-				UserBean user = new UserBean();
-				user.setUsername(emId);
-				user.setNick(nick);
+				String freeTime = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FREETIME));
+				long createTime = cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_CREATETIME));
+				String password = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_PASSWORD));
+				String easemobPassword = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_EASEMOBPASSWORD));
+				String token = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_TOKEN));
+				String avatar = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_AVATAR));
+				int unreadMsgCount = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_UNREADMSGCOUNT));
+				String header = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_HEADER));
+				UserBean user = new UserBean(userId, nick, freeTime, password, createTime, emId, easemobPassword, token, avatar, unreadMsgCount, header);
 				String headerName = null;
 				if (!TextUtils.isEmpty(user.getNick())) {
 					headerName = user.getNick();
@@ -99,8 +137,8 @@ public class UserDao {
 				} else {
 					user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
 							.get(0).target.substring(0, 1).toUpperCase());
-					char header = user.getHeader().toLowerCase().charAt(0);
-					if (header < 'a' || header > 'z') {
+					char headers = user.getHeader().toLowerCase().charAt(0);
+					if (headers < 'a' || headers > 'z') {
 						user.setHeader("#");
 					}
 				}
@@ -129,9 +167,40 @@ public class UserDao {
 	public void saveContact(UserBean user) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = new ContentValues();
+		if (StringUtil.isEmpty(user.getEasemobId())) {
+			return;
+		}
 		values.put(COLUMN_NAME_EASEMOBID, user.getEasemobId());
-		if (user.getNick() != null)
+		if (!StringUtil.isEmpty(user.getNick())) {
 			values.put(COLUMN_NAME_NICK, user.getNick());
+		}
+		if (!StringUtil.isEmpty(user.getAvatar())) {
+			values.put(COLUMN_NAME_AVATAR, user.getAvatar());
+		}
+		if (!StringUtil.isEmpty(user.getEasemobPassword())) {
+			values.put(COLUMN_NAME_EASEMOBPASSWORD, user.getEasemobPassword());
+		}
+		if (!StringUtil.isEmpty(user.getFreeTime())) {
+			values.put(COLUMN_NAME_FREETIME, user.getFreeTime());
+		}
+		if (!StringUtil.isEmpty(user.getHeader())) {
+			values.put(COLUMN_NAME_HEADER, user.getHeader());
+		}
+		if (!StringUtil.isEmpty(user.getNickname())) {
+			values.put(COLUMN_NAME_NICK, user.getNickname());
+		}
+		if (!StringUtil.isEmpty(user.getPassword())) {
+			values.put(COLUMN_NAME_PASSWORD, user.getPassword());
+		}
+		if (!StringUtil.isEmpty(user.getToken())) {
+			values.put(COLUMN_NAME_TOKEN, user.getToken());
+		}
+		if (!StringUtil.isEmpty(user.getUserId())) {
+			values.put(COLUMN_NAME_USERID, user.getUserId());
+		}
+		if (!StringUtil.isEmpty(user.getUsername())) {
+			values.put(COLUMN_NAME_ID, user.getUsername());
+		}
 		if (db.isOpen()) {
 			db.insert(TABLE_NAME, null, values);
 		}

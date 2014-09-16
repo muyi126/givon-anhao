@@ -57,6 +57,7 @@ import com.easemob.util.DateUtils;
 import com.easemob.util.FileUtils;
 import com.easemob.util.LatLng;
 import com.easemob.util.TextFormater;
+import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.R;
 import com.givon.anhao.activity.ActBaiduLoc;
 import com.givon.anhao.activity.AlertDialog;
@@ -70,6 +71,11 @@ import com.givon.anhao.task.LoadVideoImageTask;
 import com.givon.anhao.utils.ImageCache;
 import com.givon.anhao.utils.ImageUtils;
 import com.givon.anhao.utils.SmileUtils;
+import com.givon.baseproject.util.BitmapHelp;
+import com.givon.baseproject.util.StringUtil;
+import com.lidroid.xutils.BitmapUtils;
+import com.lidroid.xutils.bitmap.BitmapCommonUtils;
+import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
 
 public class MessageAdapter extends BaseAdapter {
 
@@ -100,10 +106,24 @@ public class MessageAdapter extends BaseAdapter {
 	private EMConversation conversation;
 
 	private Context context;
+	private BitmapUtils bitmapUtils;
+	private BitmapDisplayConfig bigPicDisplayConfig;
 
 	public MessageAdapter(Context context, String username, int chatType) {
 		this.username = username;
 		this.context = context;
+		bitmapUtils = AnhaoApplication.bitmapUtils;
+		if(null==bitmapUtils){
+			bitmapUtils = BitmapHelp.getBitmapUtils(context);
+			bitmapUtils.configDefaultLoadingImage(R.drawable.ic_launcher);
+			bitmapUtils.configDefaultLoadFailedImage(R.drawable.default_avatar);
+			bitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
+		}
+
+		bigPicDisplayConfig = new BitmapDisplayConfig();
+		// bigPicDisplayConfig.setShowOriginal(true); // 显示原始图片,不压缩, 尽量不要使用, 图片太大时容易OOM。
+		bigPicDisplayConfig.setBitmapConfig(Bitmap.Config.RGB_565);
+		bigPicDisplayConfig.setBitmapMaxSize(BitmapCommonUtils.getScreenSize(context));
 		inflater = LayoutInflater.from(context);
 		activity = (Activity) context;
 		this.conversation = EMChatManager.getInstance().getConversation(username);
@@ -291,6 +311,14 @@ public class MessageAdapter extends BaseAdapter {
 			} catch (EaseMobException e) {
 				e.printStackTrace();
 				holder.tv_userCity.setText("");
+			}
+			try {
+				if (!StringUtil.isEmpty(message.getStringAttribute("avatar"))) {
+					bitmapUtils.display(holder.head_iv,
+							message.getStringAttribute("avatar"), bigPicDisplayConfig);
+				}
+			} catch (Exception e) {
+				// TODO: handle exception
 			}
 		}
 		// 如果是发送的消息并且不是群聊消息，显示已读textview

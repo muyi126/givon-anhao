@@ -25,19 +25,41 @@ public class DbOpenHelper extends SQLiteOpenHelper{
 	private static DbOpenHelper instance;
 
 	private static final String USERNAME_TABLE_CREATE = "CREATE TABLE "
-			+ UserDao.TABLE_NAME + " ("
-			+ UserDao.COLUMN_NAME_NICK +" TEXT, "
-			+ UserDao.COLUMN_NAME_USERID +" TEXT, "
-			+ UserDao.COLUMN_NAME_FREETIME +" TEXT, "
-			+ UserDao.COLUMN_NAME_PASSWORD +" TEXT, "
-			+ UserDao.COLUMN_NAME_CREATETIME +" TEXT, "
-			+ UserDao.COLUMN_NAME_ID +" TEXT, "
-			+ UserDao.COLUMN_NAME_EASEMOBPASSWORD +" TEXT, "
-			+ UserDao.COLUMN_NAME_TOKEN +" TEXT, "
-			+ UserDao.COLUMN_NAME_AVATAR +" TEXT, "
-			+ UserDao.COLUMN_NAME_UNREADMSGCOUNT +" TEXT, "
-			+ UserDao.COLUMN_NAME_HEADER +" TEXT, "
-			+ UserDao.COLUMN_NAME_EASEMOBID + " TEXT PRIMARY KEY);";
+			+ UserDaoOld.TABLE_NAME + " ("
+			+ UserDaoOld.COLUMN_NAME_NICK +" TEXT, "
+			+ UserDaoOld.COLUMN_NAME_ID + " TEXT PRIMARY KEY);";
+	private static final String HELLOW_USERNAME_TABLE_CREATE = "CREATE TABLE "
+			+ HelloUserDao.TABLE_NAME + " ("
+			+ HelloUserDao.COLUMN_NAME_NICK +" TEXT, "
+			+ HelloUserDao.COLUMN_NAME_ID + " TEXT PRIMARY KEY);";
+//	private static final String USERNAME_TABLE_CREATE = "CREATE TABLE "
+//			+ UserDao.TABLE_NAME + " ("
+//			+ UserDao.COLUMN_NAME_NICK +" TEXT, "
+//			+ UserDao.COLUMN_NAME_USERID +" TEXT, "
+//			+ UserDao.COLUMN_NAME_FREETIME +" TEXT, "
+//			+ UserDao.COLUMN_NAME_PASSWORD +" TEXT, "
+//			+ UserDao.COLUMN_NAME_CREATETIME +" TEXT, "
+//			+ UserDao.COLUMN_NAME_ID +" TEXT, "
+//			+ UserDao.COLUMN_NAME_EASEMOBPASSWORD +" TEXT, "
+//			+ UserDao.COLUMN_NAME_TOKEN +" TEXT, "
+//			+ UserDao.COLUMN_NAME_AVATAR +" TEXT, "
+//			+ UserDao.COLUMN_NAME_UNREADMSGCOUNT +" TEXT, "
+//			+ UserDao.COLUMN_NAME_HEADER +" TEXT, "
+//			+ UserDao.COLUMN_NAME_EASEMOBID + " TEXT PRIMARY KEY);";
+	private static final String YE_USERNAME_TABLE_CREATE = "CREATE TABLE "
+			+ YeUserDao.TABLE_NAME + " ("
+			+ YeUserDao.COLUMN_NAME_NICK +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_USERID +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_FREETIME +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_PASSWORD +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_CREATETIME +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_ID +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_EASEMOBPASSWORD +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_TOKEN +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_AVATAR +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_UNREADMSGCOUNT +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_HEADER +" TEXT, "
+			+ YeUserDao.COLUMN_NAME_EASEMOBID + " TEXT PRIMARY KEY);";
 	
 	private static final String INIVTE_MESSAGE_TABLE_CREATE = "CREATE TABLE "
 			+ InviteMessgeDao.TABLE_NAME + " ("
@@ -70,7 +92,9 @@ public class DbOpenHelper extends SQLiteOpenHelper{
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		db.execSQL(USERNAME_TABLE_CREATE);
+		db.execSQL(YE_USERNAME_TABLE_CREATE);
 		db.execSQL(INIVTE_MESSAGE_TABLE_CREATE);
+		db.execSQL(HELLOW_USERNAME_TABLE_CREATE);
 		
 	}
 

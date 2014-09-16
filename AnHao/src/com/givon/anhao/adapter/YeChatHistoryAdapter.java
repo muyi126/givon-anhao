@@ -18,7 +18,6 @@ import java.util.List;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -41,51 +40,31 @@ import com.easemob.exceptions.EaseMobException;
 import com.easemob.util.DateUtils;
 import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.R;
-import com.givon.anhao.activity.ActYeContactList;
 import com.givon.anhao.activity.ChatActivity;
 import com.givon.anhao.utils.SmileUtils;
-import com.givon.baseproject.util.BitmapHelp;
 import com.givon.baseproject.util.StringUtil;
 import com.givon.baseproject.util.ToastUtil;
-import com.lidroid.xutils.BitmapUtils;
-import com.lidroid.xutils.bitmap.BitmapCommonUtils;
-import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
 
 /**
  * 聊天记录adpater
  * 
  */
-public class ChatHistoryAdapter extends BaseAdapter {
+public class YeChatHistoryAdapter extends BaseAdapter {
 
 	// private LayoutInflater inflater;
 	private Context context;
-	private final static int TYPE_FIRST = 0;
-	private final static int TYPE_EMGROUP = 1;
-	private final static int TYPE_CHAT = 2;
+	private final static int TYPE_EMGROUP = 0;
+	private final static int TYPE_CHAT = 1;
 	private List<EMContact> list;
-	private BitmapUtils bitmapUtils;
-	private BitmapDisplayConfig bigPicDisplayConfig;
 
 	// public ChatHistoryAdapter(Context context, int textViewResourceId, List<EMContact> objects) {
 	// super(context, textViewResourceId, objects);
 	// inflater = LayoutInflater.from(context);
 	// this.context = context;
 	// }
-	public ChatHistoryAdapter(Context context, List<EMContact> list) {
+	public YeChatHistoryAdapter(Context context, List<EMContact> list) {
 		this.context = context;
 		this.list = list;
-		bitmapUtils = AnhaoApplication.bitmapUtils;
-		if(null==bitmapUtils){
-			bitmapUtils = BitmapHelp.getBitmapUtils(context);
-			bitmapUtils.configDefaultLoadingImage(R.drawable.ic_launcher);
-			bitmapUtils.configDefaultLoadFailedImage(R.drawable.default_avatar);
-			bitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
-		}
-
-		bigPicDisplayConfig = new BitmapDisplayConfig();
-		// bigPicDisplayConfig.setShowOriginal(true); // 显示原始图片,不压缩, 尽量不要使用, 图片太大时容易OOM。
-		bigPicDisplayConfig.setBitmapConfig(Bitmap.Config.RGB_565);
-		bigPicDisplayConfig.setBitmapMaxSize(BitmapCommonUtils.getScreenSize(context));
 	}
 
 	@Override
@@ -131,12 +110,9 @@ public class ChatHistoryAdapter extends BaseAdapter {
 			username = user.getUsername();
 		}
 		switch (type) {
-		case TYPE_FIRST:
-			break;
 		case TYPE_EMGROUP:
 			// 群聊消息，显示群聊头像
 			holder.avatar.setImageResource(R.drawable.group_icon);
-
 			break;
 		case TYPE_CHAT:
 			holder.avatar.setImageResource(R.drawable.default_avatar);
@@ -145,79 +121,58 @@ public class ChatHistoryAdapter extends BaseAdapter {
 		default:
 			break;
 		}
-		if (type != TYPE_FIRST) {
-			EMConversation conversation = EMChatManager.getInstance().getConversation(username);
-			holder.name.setText(StringUtil.isEmpty(user.getNick()) ? user.getNick() : username);
-
-			if (conversation.getUnreadMsgCount() > 0) {
-				// 显示与此用户的消息未读数
-				holder.unreadLabel.setText(String.valueOf(conversation.getUnreadMsgCount()));
-				holder.unreadLabel.setVisibility(View.VISIBLE);
-			} else {
-				holder.unreadLabel.setVisibility(View.INVISIBLE);
-			}
-			if (conversation.getMsgCount() != 0) {
-				// 把最后一条消息的内容作为item的message内容
-				EMMessage lastMessage = conversation.getLastMessage();
-				try {
-					if (!StringUtil.isEmpty(lastMessage.getStringAttribute("location"))) {
-						holder.name.setText(lastMessage.getStringAttribute("location"));
-
-					} else if (!StringUtil.isEmpty(lastMessage.getStringAttribute("avatar"))) {
-						bitmapUtils.display(holder.avatar,
-								lastMessage.getStringAttribute("avatar"), bigPicDisplayConfig);
-					}
-				} catch (EaseMobException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				holder.message.setText(
-						SmileUtils.getSmiledText(context, getMessageDigest(lastMessage, context)),
-						BufferType.SPANNABLE);
-
-				holder.time
-						.setText(DateUtils.getTimestampString(new Date(lastMessage.getMsgTime())));
-				if (lastMessage.direct == EMMessage.Direct.SEND
-						&& lastMessage.status == EMMessage.Status.FAIL) {
-					holder.msgState.setVisibility(View.VISIBLE);
-				} else {
-					holder.msgState.setVisibility(View.GONE);
-				}
-			}
-
-			convertView.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					EMContact emContact = getItem(position);
-					if (getItem(position).getUsername().equals(
-							AnhaoApplication.getInstance().getUserName()))
-						ToastUtil.showMessage("不能和自己聊天");
-					else {
-						// 进入聊天页面
-						Intent intent = new Intent(context, ChatActivity.class);
-						if (emContact instanceof EMGroup) {
-							intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
-							intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
-						} else {
-							intent.putExtra("userId", emContact.getUsername());
-						}
-						context.startActivity(intent);
-					}
-				}
-			});
+		EMConversation conversation = EMChatManager.getInstance().getConversation(username);
+		holder.name.setText(StringUtil.isEmpty(user.getNick()) ? user.getNick() : username);
+		if (conversation.getUnreadMsgCount() > 0) {
+			// 显示与此用户的消息未读数
+			holder.unreadLabel.setText(String.valueOf(conversation.getUnreadMsgCount()));
+			holder.unreadLabel.setVisibility(View.VISIBLE);
 		} else {
-			convertView.setOnClickListener(new OnClickListener() {
+			holder.unreadLabel.setVisibility(View.INVISIBLE);
+		}
+		if (conversation.getMsgCount() != 0) {
+			// 把最后一条消息的内容作为item的message内容
+			EMMessage lastMessage = conversation.getLastMessage();
+			holder.message.setText(
+					SmileUtils.getSmiledText(context, getMessageDigest(lastMessage, context)),
+					BufferType.SPANNABLE);
+			try {
+				holder.name.setText(lastMessage.getStringAttribute("location"));
+			} catch (EaseMobException e) {
+				e.printStackTrace();
+				holder.name.setText("");
+			}
 
-				@Override
-				public void onClick(View v) {
+			holder.time.setText(DateUtils.getTimestampString(new Date(lastMessage.getMsgTime())));
+			if (lastMessage.direct == EMMessage.Direct.SEND
+					&& lastMessage.status == EMMessage.Status.FAIL) {
+				holder.msgState.setVisibility(View.VISIBLE);
+			} else {
+				holder.msgState.setVisibility(View.GONE);
+			}
+		}
 
-					Intent intent = new Intent(context, ActYeContactList.class);
+		convertView.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				EMContact emContact = getItem(position);
+				if (getItem(position).getUsername().equals(
+						AnhaoApplication.getInstance().getUserName()))
+					ToastUtil.showMessage("不能和自己聊天");
+				else {
+					// 进入聊天页面
+					Intent intent = new Intent(context, ChatActivity.class);
+					if (emContact instanceof EMGroup) {
+						intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
+						intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
+					} else {
+						intent.putExtra("userId", emContact.getUsername());
+					}
 					context.startActivity(intent);
 				}
-
-			});
-		}
+			}
+		});
 
 		convertView.setOnLongClickListener(new OnLongClickListener() {
 			@Override
@@ -312,25 +267,21 @@ public class ChatHistoryAdapter extends BaseAdapter {
 
 	@Override
 	public int getViewTypeCount() {
-		return 3;
+		return 2;
 	}
 
 	@Override
 	public int getItemViewType(int position) {
-		if (position == 0) {
-			return TYPE_FIRST;
+		if (getItem(position) instanceof EMGroup) {
+			return TYPE_EMGROUP;
 		} else {
-			if (getItem(position) instanceof EMGroup) {
-				return TYPE_EMGROUP;
-			} else {
-				return TYPE_CHAT;
-			}
+			return TYPE_CHAT;
 		}
 	}
 
 	@Override
 	public int getCount() {
-		return list.size() + 1;
+		return list.size();
 	}
 
 	@Override

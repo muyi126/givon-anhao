@@ -23,7 +23,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
+import com.baidu.platform.comapi.map.u;
 import com.easemob.util.HanziToPinyin;
+import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.Constant;
 import com.givon.baseproject.entity.UserBean;
 import com.givon.baseproject.util.StringUtil;
@@ -60,38 +62,38 @@ public class YeUserDao {
 			db.delete(TABLE_NAME, null, null);
 			for (UserBean user : contactList) {
 				ContentValues values = new ContentValues();
-				if(StringUtil.isEmpty(user.getEasemobId())){
-					return ;
+				if (StringUtil.isEmpty(user.getEasemobId())) {
+					return;
 				}
 				values.put(COLUMN_NAME_EASEMOBID, user.getEasemobId());
-				if (!StringUtil.isEmpty(user.getNick())){
+				if (!StringUtil.isEmpty(user.getNick())) {
 					values.put(COLUMN_NAME_NICK, user.getNick());
 				}
-				if(!StringUtil.isEmpty(user.getAvatar())){
+				if (!StringUtil.isEmpty(user.getAvatar())) {
 					values.put(COLUMN_NAME_AVATAR, user.getAvatar());
 				}
-				if(!StringUtil.isEmpty(user.getEasemobPassword())){
+				if (!StringUtil.isEmpty(user.getEasemobPassword())) {
 					values.put(COLUMN_NAME_EASEMOBPASSWORD, user.getEasemobPassword());
 				}
-				if(!StringUtil.isEmpty(user.getFreeTime())){
+				if (!StringUtil.isEmpty(user.getFreeTime())) {
 					values.put(COLUMN_NAME_FREETIME, user.getFreeTime());
 				}
-				if(!StringUtil.isEmpty(user.getHeader())){
+				if (!StringUtil.isEmpty(user.getHeader())) {
 					values.put(COLUMN_NAME_HEADER, user.getHeader());
 				}
-				if(!StringUtil.isEmpty(user.getNickname())){
+				if (!StringUtil.isEmpty(user.getNickname())) {
 					values.put(COLUMN_NAME_NICK, user.getNickname());
 				}
-				if(!StringUtil.isEmpty(user.getPassword())){
+				if (!StringUtil.isEmpty(user.getPassword())) {
 					values.put(COLUMN_NAME_PASSWORD, user.getPassword());
 				}
-				if(!StringUtil.isEmpty(user.getToken())){
+				if (!StringUtil.isEmpty(user.getToken())) {
 					values.put(COLUMN_NAME_TOKEN, user.getToken());
 				}
-				if(!StringUtil.isEmpty(user.getUserId())){
+				if (!StringUtil.isEmpty(user.getUserId())) {
 					values.put(COLUMN_NAME_USERID, user.getUserId());
 				}
-				if(!StringUtil.isEmpty(user.getUsername())){
+				if (!StringUtil.isEmpty(user.getUsername())) {
 					values.put(COLUMN_NAME_ID, user.getUsername());
 				}
 				db.insert(TABLE_NAME, null, values);
@@ -104,17 +106,27 @@ public class YeUserDao {
 	 * 
 	 * @return
 	 */
-	public Map<String, UserBean> getContactList() {
+	public HashMap<String, UserBean> getContactList() {
 		SQLiteDatabase db = dbHelper.getReadableDatabase();
-		Map<String, UserBean> users = new HashMap<String, UserBean>();
+		HashMap<String, UserBean> users = new HashMap<String, UserBean>();
 		if (db.isOpen()) {
 			Cursor cursor = db.rawQuery("select * from " + TABLE_NAME /* + " desc" */, null);
 			while (cursor.moveToNext()) {
+				String userId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_USERID));
 				String emId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_EASEMOBID));
 				String nick = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NICK));
-				UserBean user = new UserBean();
-				user.setUsername(emId);
-				user.setNick(nick);
+				String freeTime = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FREETIME));
+				long createTime = cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_CREATETIME));
+				String password = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_PASSWORD));
+				String easemobPassword = cursor.getString(cursor
+						.getColumnIndex(COLUMN_NAME_EASEMOBPASSWORD));
+				String token = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_TOKEN));
+				String avatar = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_AVATAR));
+				int unreadMsgCount = cursor.getInt(cursor
+						.getColumnIndex(COLUMN_NAME_UNREADMSGCOUNT));
+				String header = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_HEADER));
+				UserBean user = new UserBean(userId, nick, freeTime, password, createTime, emId,
+						easemobPassword, token, avatar, unreadMsgCount, header);
 				String headerName = null;
 				if (!TextUtils.isEmpty(user.getNick())) {
 					headerName = user.getNick();
@@ -130,8 +142,8 @@ public class YeUserDao {
 				} else {
 					user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
 							.get(0).target.substring(0, 1).toUpperCase());
-					char header = user.getHeader().toLowerCase().charAt(0);
-					if (header < 'a' || header > 'z') {
+					char headers = user.getHeader().toLowerCase().charAt(0);
+					if (headers < 'a' || headers > 'z') {
 						user.setHeader("#");
 					}
 				}
@@ -158,50 +170,53 @@ public class YeUserDao {
 	 * @param user
 	 */
 	public void saveContact(UserBean user) {
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		ContentValues values = new ContentValues();
-		if(StringUtil.isEmpty(user.getEasemobId())){
-			return;
-		}
-		values.put(COLUMN_NAME_EASEMOBID, user.getEasemobId());
-		if (!StringUtil.isEmpty(user.getNick())){
-			values.put(COLUMN_NAME_NICK, user.getNick());
-		}
-		if(!StringUtil.isEmpty(user.getAvatar())){
-			values.put(COLUMN_NAME_AVATAR, user.getAvatar());
-		}
-		if(!StringUtil.isEmpty(user.getEasemobPassword())){
-			values.put(COLUMN_NAME_EASEMOBPASSWORD, user.getEasemobPassword());
-		}
-		if(!StringUtil.isEmpty(user.getFreeTime())){
-			values.put(COLUMN_NAME_FREETIME, user.getFreeTime());
-		}
-		if(!StringUtil.isEmpty(user.getHeader())){
-			values.put(COLUMN_NAME_HEADER, user.getHeader());
-		}
-		if(!StringUtil.isEmpty(user.getNickname())){
-			values.put(COLUMN_NAME_NICK, user.getNickname());
-		}
-		if(!StringUtil.isEmpty(user.getPassword())){
-			values.put(COLUMN_NAME_PASSWORD, user.getPassword());
-		}
-		if(!StringUtil.isEmpty(user.getToken())){
-			values.put(COLUMN_NAME_TOKEN, user.getToken());
-		}
-		if(!StringUtil.isEmpty(user.getUserId())){
-			values.put(COLUMN_NAME_USERID, user.getUserId());
-		}
-		if(!StringUtil.isEmpty(user.getUsername())){
-			values.put(COLUMN_NAME_ID, user.getUsername());
-		}
-		if (db.isOpen()) {
-			db.insert(TABLE_NAME, null, values);
+		if (!AnhaoApplication.getInstance().getContactList().containsKey(user.getEid())) {
+			SQLiteDatabase db = dbHelper.getWritableDatabase();
+			ContentValues values = new ContentValues();
+			if (StringUtil.isEmpty(user.getEasemobId())) {
+				return;
+			}
+			values.put(COLUMN_NAME_EASEMOBID, user.getEasemobId());
+			if (!StringUtil.isEmpty(user.getNick())) {
+				values.put(COLUMN_NAME_NICK, user.getNick());
+			}
+			if (!StringUtil.isEmpty(user.getAvatar())) {
+				values.put(COLUMN_NAME_AVATAR, user.getAvatar());
+			}
+			if (!StringUtil.isEmpty(user.getEasemobPassword())) {
+				values.put(COLUMN_NAME_EASEMOBPASSWORD, user.getEasemobPassword());
+			}
+			if (!StringUtil.isEmpty(user.getFreeTime())) {
+				values.put(COLUMN_NAME_FREETIME, user.getFreeTime());
+			}
+			if (!StringUtil.isEmpty(user.getHeader())) {
+				values.put(COLUMN_NAME_HEADER, user.getHeader());
+			}
+			if (!StringUtil.isEmpty(user.getNickname())) {
+				values.put(COLUMN_NAME_NICK, user.getNickname());
+			}
+			if (!StringUtil.isEmpty(user.getPassword())) {
+				values.put(COLUMN_NAME_PASSWORD, user.getPassword());
+			}
+			if (!StringUtil.isEmpty(user.getToken())) {
+				values.put(COLUMN_NAME_TOKEN, user.getToken());
+			}
+			if (!StringUtil.isEmpty(user.getUserId())) {
+				values.put(COLUMN_NAME_USERID, user.getUserId());
+			}
+			if (!StringUtil.isEmpty(user.getUsername())) {
+				values.put(COLUMN_NAME_ID, user.getUsername());
+			}
+			if (db.isOpen()) {
+				db.insert(TABLE_NAME, null, values);
+			}
 		}
 	}
-/**
- * 判断数据库是否有数据
- * @return
- */
+
+	/**
+	 * 判断数据库是否有数据
+	 * @return
+	 */
 	public boolean hasData() {
 		SQLiteDatabase db = dbHelper.getReadableDatabase();
 		if (db.isOpen()) {
@@ -216,27 +231,51 @@ public class YeUserDao {
 		}
 		return false;
 	}
-	
-	public boolean hasEmId(String emId){
+
+	public boolean hasEmId(String emId) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		if (db.isOpen()) {
-			String table = TABLE_NAME;  
-			String[] columns = new String[] {COLUMN_NAME_EASEMOBID, COLUMN_NAME_NICK};  
-			String selection = COLUMN_NAME_EASEMOBID;  
-			String[] selectionArgs = new String[]{emId};  
-			String groupBy = COLUMN_NAME_EASEMOBID;  
-			String having = null;  
-			String orderBy = null;  
-			Cursor a = db.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
-			if(a.moveToNext()){
+			Cursor c = db.rawQuery("select * from " + TABLE_NAME + " where "
+					+ COLUMN_NAME_EASEMOBID + "=?", new String[] { emId });
+			if (c.moveToNext()) {
 				return true;
-			}else {
+			} else {
 				return false;
 			}
-		}else {
+		} else {
 			return false;
 		}
-		
+
+	}
+
+	public UserBean getAUserBean(String tEmId) {
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		if (db.isOpen()) {
+			Cursor cursor = db.rawQuery("select * from " + TABLE_NAME + " where "
+					+ COLUMN_NAME_EASEMOBID + "=?", new String[] { tEmId });
+			if (cursor.moveToNext()) {
+				String userId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_USERID));
+				String emId = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_EASEMOBID));
+				String nick = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NICK));
+				String freeTime = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FREETIME));
+				long createTime = cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_CREATETIME));
+				String password = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_PASSWORD));
+				String easemobPassword = cursor.getString(cursor
+						.getColumnIndex(COLUMN_NAME_EASEMOBPASSWORD));
+				String token = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_TOKEN));
+				String avatar = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_AVATAR));
+				int unreadMsgCount = cursor.getInt(cursor
+						.getColumnIndex(COLUMN_NAME_UNREADMSGCOUNT));
+				String header = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_HEADER));
+				UserBean user = new UserBean(userId, nick, freeTime, password, createTime, emId,
+						easemobPassword, token, avatar, unreadMsgCount, header);
+				return user;
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
 	}
 
 }
