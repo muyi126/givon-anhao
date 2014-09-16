@@ -33,6 +33,7 @@ import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseActivity;
 import com.givon.anhao.R;
 import com.givon.anhao.utils.PreferenceUtils;
+import com.givon.anhao.welcome.ActAnhaoWelcome;
 
 /**
  * 设置界面
@@ -259,7 +260,7 @@ public class SettingsFragment extends BaseActivity implements OnClickListener {
 		case R.id.btn_logout:
 			AnhaoApplication.getInstance().logout();
 			// 重新显示登陆页面
-			startActivity(new Intent(this, LoginActivity.class));
+			startActivity(new Intent(this, ActAnhaoWelcome.class));
 			finish();
 			break;
 		case R.id.ll_black_list:

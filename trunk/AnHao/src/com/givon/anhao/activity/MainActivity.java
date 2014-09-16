@@ -48,7 +48,7 @@ public class MainActivity extends FragmentActivity {
 		setContentView(R.layout.activity_main);
 //		initView();
 //		inviteMessgeDao = new InviteMessgeDao(this);
-//		userDao = new UserDao(this);
+//		userDao = new UserDaoOld(this);
 //		chatHistoryFragment = new ChatHistoryFragment();
 //		contactListFragment = new ContactlistFragment();
 //		settingFragment = new SettingsFragment();
@@ -251,7 +251,7 @@ public class MainActivity extends FragmentActivity {
 //	};
 //
 //	private InviteMessgeDao inviteMessgeDao;
-//	private UserDao userDao;
+//	private UserDaoOld userDao;
 //
 //	/***
 //	 * 联系人变化listener

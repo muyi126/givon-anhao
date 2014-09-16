@@ -3,7 +3,7 @@
     android:id="@+id/id_listview_parent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/font_white"
+    android:background="@drawable/chat_bg"
     android:orientation="vertical" >
 
     <com.givon.baseproject.view.AppTitleBar

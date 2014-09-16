@@ -21,7 +21,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 
 import com.givon.anhao.AnhaoApplication;
-import com.givon.baseproject.entity.UserBean;
+import com.givon.baseproject.entity.LoginBean;
 
 public class ShareCookie {
 
@@ -58,7 +58,7 @@ public class ShareCookie {
 		setLoginAuth(false);
 	}
 
-	public static boolean saveUserInfo(UserBean entity) {
+	public static boolean saveUserInfo(LoginBean entity) {
 		boolean ret = false;
 		if (null == entity) {
 			return false;
@@ -83,13 +83,13 @@ public class ShareCookie {
 		return ret;
 	}
 
-	public static UserBean getUserInfo() {
-		UserBean entity = null;
+	public static LoginBean getUserInfo() {
+		LoginBean entity = null;
 		FileInputStream fin = null;
 		try {
 			fin = AnhaoApplication.getInstance().openFileInput(USER_INFO);
 			ObjectInputStream inStream = new ObjectInputStream(fin);
-			entity = (UserBean) inStream.readObject();
+			entity = (LoginBean) inStream.readObject();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -113,7 +113,7 @@ public class ShareCookie {
 	 * @return
 	 */
 	public static String getUserAnId() {
-		UserBean bean = getUserInfo();
+		LoginBean bean = getUserInfo();
 		if (bean != null) {
 			return String.valueOf(bean.getUserId());
 		}
@@ -125,7 +125,7 @@ public class ShareCookie {
 	 * @return
 	 */
 	public static String getUserId() {
-		UserBean bean = getUserInfo();
+		LoginBean bean = getUserInfo();
 		if (bean != null) {
 			return String.valueOf(bean.getEasemobId());
 		}

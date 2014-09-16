@@ -47,7 +47,7 @@
     <application
         android:name="com.givon.anhao.AnhaoApplication"
         android:allowBackup="true"
-        android:icon="@drawable/logo_uidemo"
+        android:icon="@drawable/icon001"
         android:label="@string/app_name" >
         <activity
             android:name="com.givon.anhao.activity.MainActivity"
@@ -173,6 +173,12 @@
         <!-- 公开的群聊列表 -->
         <activity
             android:name="com.givon.anhao.activity.PublicGroupsActivity"
+            android:theme="@style/horizontal_slide"
+            android:windowSoftInputMode="adjustPan" >
+        </activity>
+        <!-- 野招呼列表 -->
+        <activity
+            android:name="com.givon.anhao.activity.ActYeContactList"
             android:theme="@style/horizontal_slide"
             android:windowSoftInputMode="adjustPan" >
         </activity>

@@ -10,12 +10,13 @@
 
 package com.givon.baseproject.entity;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.easemob.chat.EMContact;
 import com.j256.ormlite.field.DatabaseField;
 
-public class UserBean extends EMContact implements Serializable {
+public class UserBean extends EMContact implements Parcelable {
 	private static final long serialVersionUID = 1L;
 	@DatabaseField(useGetSet = true, columnName = "userId")
 	private String userId;
@@ -54,6 +55,7 @@ public class UserBean extends EMContact implements Serializable {
 
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
+		super.nick = nickname;
 	}
 
 	public String getFreeTime() {
@@ -82,10 +84,18 @@ public class UserBean extends EMContact implements Serializable {
 
 	public String getEasemobId() {
 		return easemobId;
+		
 	}
+	public String getEid() {
+		return super.eid;
+		
+	}
+	
 
 	public void setEasemobId(String easemobId) {
 		this.easemobId = easemobId;
+		super.eid = easemobId;
+		
 	}
 
 	public String getEasemobPassword() {
@@ -127,8 +137,78 @@ public class UserBean extends EMContact implements Serializable {
 	public void setHeader(String header) {
 		this.header = header;
 	}
-	
-	
-	
+
+	public UserBean() {
+		super();
+	}
+
+	public UserBean(String userId, String nickname, String freeTime, String password,
+			long createTime, String easemobId, String easemobPassword, String token, String avatar,
+			int unreadMsgCount, String header) {
+		super(easemobId);
+		this.userId = userId;
+		this.nickname = nickname;
+		this.freeTime = freeTime;
+		this.password = password;
+		this.createTime = createTime;
+		this.easemobId = easemobId;
+		this.easemobPassword = easemobPassword;
+		this.token = token;
+		this.avatar = avatar;
+		this.unreadMsgCount = unreadMsgCount;
+		this.header = header;
+	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel out, int flags) {
+		out.writeString(super.eid);
+		out.writeString(super.nick);
+		out.writeString(super.username);
+		out.writeString(userId);
+		out.writeString(nickname);
+		out.writeString(freeTime);
+		out.writeString(password);
+		out.writeLong(createTime);
+		out.writeString(easemobId);
+		out.writeString(easemobPassword);
+		out.writeString(token);
+		out.writeString(avatar);
+		out.writeInt(unreadMsgCount);
+		out.writeString(header);
+	}
+
+	public static final Parcelable.Creator<UserBean> CREATOR = new Creator<UserBean>() {
+		@Override
+		public UserBean[] newArray(int size) {
+			return new UserBean[size];
+		}
+
+		@Override
+		public UserBean createFromParcel(Parcel in) {
+			return new UserBean(in);
+		}
+	};
+
+	public UserBean(Parcel in) {
+		super.eid = in.readString();
+		super.nick = in.readString();
+		super.username = in.readString();
+		userId = in.readString();
+		nickname = in.readString();
+		freeTime = in.readString();
+		password = in.readString();
+		createTime = in.readLong();
+		easemobId = in.readString();
+		easemobPassword = in.readString();
+		token = in.readString();
+		avatar = in.readString();
+		unreadMsgCount = in.readInt();
+		header = in.readString();
+	}
 
 }

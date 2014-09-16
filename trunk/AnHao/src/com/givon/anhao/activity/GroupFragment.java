@@ -10,9 +10,6 @@
 
 package com.givon.anhao.activity;
 
-import java.sql.SQLException;
-import java.util.List;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -21,15 +18,17 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.support.httpclient.HttpCallBack;
 import com.android.support.httpclient.HttpClientAsync;
+import com.easemob.chat.EMChatManager;
+import com.easemob.chat.EMGroup;
 import com.easemob.chat.EMGroupManager;
 import com.easemob.exceptions.EaseMobException;
 import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseListFragment;
 import com.givon.anhao.R;
-import com.givon.anhao.R.id;
 import com.givon.anhao.db.YeUserDao;
 import com.givon.anhao.utils.HttpUtil;
 import com.givon.baseproject.entity.ErrorCode;
@@ -96,7 +95,7 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 			viewHolder = (ViewHolder) convertView.getTag();
 			viewHolder.tv_Name_cn.setText(bean.getRoomName());
 			viewHolder.tv_Name_en.setText(bean.getDescription());
-			viewHolder.tv_Num.setText((position+1)+"");
+			viewHolder.tv_Num.setText((position + 1) + "");
 			bitmapUtils.display(viewHolder.iv_Background, bean.getCover());
 		}
 		convertView.setOnClickListener(new OnClickListener() {
@@ -105,15 +104,51 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 			public void onClick(View v) {
 				// 进入聊天页面
 				if (null != bean) {
+					new Thread(new Runnable() {
+
+						public void run() {
+							// 从服务器获取详情
+							try {
+								final EMGroup group = EMGroupManager.getInstance()
+										.getGroupFromServer(bean.getGroupId());
+								getActivity().runOnUiThread(new Runnable() {
+									public void run() {
+										// 获取详情成功，并且自己不在群中，才让加入群聊
+										if (!group.getMembers().contains(
+												EMChatManager.getInstance().getCurrentUser())) {
+											// 如果是membersOnly的群，需要申请加入，不能直接join
+											try {
+												if (group.isMembersOnly()) {
+													EMGroupManager.getInstance().applyJoinToGroup(
+															bean.getGroupId(), "求加入");
+
+												} else {
+													EMGroupManager.getInstance().joinGroup(
+															bean.getGroupId());
+												}
+												startActChat(bean);
+											} catch (EaseMobException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+										} else {
+											startActChat(bean);
+										}
+									}
+								});
+							} catch (final EaseMobException e) {
+								e.printStackTrace();
+								getActivity().runOnUiThread(new Runnable() {
+									public void run() {
+										ToastUtil.showMessage("获取群聊信息失败: " + e.getMessage());
+									}
+								});
+							}
+
+						}
+					}).start();
 					// EMGroupInfo info = new EMGroupInfo(entity.getRoomId(), entity.getRoomName());
-					Intent intent = new Intent(getActivity(), ChatActivity.class);
-					// it is group chat
-					intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
-					intent.putExtra("groupId", bean.getGroupId());
-					intent.putExtra("data", bean);
-					startActivity(intent);
-					// startActivity(new Intent(getActivity(), GroupSimpleDetailActivity.class).
-					// putExtra("groupinfo", info));
+
 				}
 			}
 		});
@@ -125,63 +160,74 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 		loadData();
 	}
 
+	private void startActChat(RoomBean bean) {
+		Intent intent = new Intent(getActivity(), ChatActivity.class);
+		intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
+		intent.putExtra("groupId", bean.getGroupId());
+//		YeUserDao dao = new YeUserDao(getActivity());
+//		UserBean userBean = dao.getAUserBean(bean.getGroupId());
+//		intent.putExtra("data", userBean);
+		startActivity(intent);
+
+	}
+
 	@Override
 	public void onPullLoadMore() {
 
 	}
 
-
 	private void loadData() {
-		
+
 		HttpClientAsync httpClientAsync = HttpClientAsync.getInstance();
 		httpClientAsync.get(HttpUtil.getUrl(HttpUtil.RECOMMEND), new HttpCallBack() {
-			
+
 			@Override
 			public void onHttpSuccess(Object obj) {
 				dismissWaitingDialog();
-				RoomEntity entity = (RoomEntity)obj;
-				if(null!=entity&&null!=entity.getResult()&&entity.getResult().size()>0){
-					try {
-//						 Dao<RoomBean, Integer> dao = mDbHelper.getRoomDao();
-						 YeUserDao dao = new YeUserDao(getActivity());
-						for (int i = 0; i < entity.getResult().size(); i++) {
-							RoomBean bean = entity.getResult().get(i);
-							entity.getResult().get(i).setEmId(bean.getGroupId());
-//							List<RoomBean> list = dao.queryForEq("groupId", bean.getGroupId());
-							if(dao.hasEmId(bean.getGroupId())){
-								
-							}else {
-								//这个userbean的type还不确定
-								UserBean userBean = new UserBean();
-								userBean.setEasemobId(bean.getGroupId());
-//								bean.setType(ChatActivity.CHATTYPE_GROUP);
-								userBean.setNick(bean.getRoomName());
-								userBean.setUsername(bean.getGroupId());
-								EMGroupManager.getInstance().applyJoinToGroup(bean.getGroupId(),AnhaoApplication.getInstance().getUserName());
-								dao.saveContact(userBean);
-							}
-//							if(null!=list&&list.size()>0){
-//								
-//							}else {
-//								EMGroupManager.getInstance().applyJoinToGroup(bean.getGroupId(),AnhaoApplication.getInstance().getUserName());
-//								bean.setType(ChatActivity.CHATTYPE_GROUP);
-//								bean.setEmId(bean.getGroupId());
-//								dao.createOrUpdate(bean);
-//							}
-						}
-					} catch (EaseMobException e) {
-						e.printStackTrace();
-					}
-//					EMGroupManager.getInstance().applyJoinToGroup("1407979795996334",AnhaoApplication.getInstance().getUserName());
+				final RoomEntity entity = (RoomEntity) obj;
+				if (null != entity && null != entity.getResult() && entity.getResult().size() > 0) {
+					// Dao<RoomBean, Integer> dao = mDbHelper.getRoomDao();
+					// final YeUserDao dao = new YeUserDao(getActivity());
+					// new Thread(new Runnable() {
+					//
+					// @Override
+					// public void run() {
+					// for (int i = 0; i < entity.getResult().size(); i++) {
+					// RoomBean bean = entity.getResult().get(i);
+					// entity.getResult().get(i).setEmId(bean.getGroupId());
+					// // List<RoomBean> list = dao.queryForEq("groupId", bean.getGroupId());
+					// if(dao.hasEmId(bean.getGroupId())){
+					//
+					// }else {
+					// //这个userbean的type还不确定
+					// UserBean userBean = new UserBean();
+					// userBean.setEasemobId(bean.getGroupId());
+					// bean.setType(ChatActivity.CHATTYPE_GROUP);
+					// userBean.setNick(bean.getRoomName());
+					// userBean.setNickname(bean.getRoomName());
+					// userBean.setUsername(bean.getGroupId());
+					// try {
+					// EMGroupManager.getInstance().applyJoinToGroup(bean.getGroupId(),AnhaoApplication.getInstance().getUserName());
+					// } catch (EaseMobException e) {
+					// // TODO Auto-generated catch block
+					// e.printStackTrace();
+					// }
+					// dao.saveContact(userBean);
+					// }
+					// }
+					// }
+					// }).start();
+
+					// EMGroupManager.getInstance().applyJoinToGroup("1407979795996334",AnhaoApplication.getInstance().getUserName());
 					mAdapter.putData(entity.getResult());
 				}
 			}
-			
+
 			@Override
 			public void onHttpStarted() {
 				showWaitingDialog("稍等一下。。。");
 			}
-			
+
 			@Override
 			public void onHttpFailure(Exception e, String message, int Errorcode) {
 				dismissWaitingDialog();
@@ -195,18 +241,18 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 					}
 				}
 			}
-		},RoomEntity.class);
-//		ArrayList<RoomEntity> list = new ArrayList<RoomEntity>();
-//		for (int i = 0; i < 4; i++) {
-//			RoomEntity entity = new RoomEntity();
-//			entity.setRoomName("不作死就不会死");
-//			entity.setWsHost("NO DO NO DIE");
-//			entity.setRoomId("1407979795996334");
-//			entity.setOnlineCount("NO.1");
-//			entity.setCover("http://e.hiphotos.baidu.com/image/pic/item/cc11728b4710b9128462b9fec1fdfc039245220a.jpg");
-//			list.add(entity);
-//		}
-//		mAdapter.putData(list);
+		}, RoomEntity.class);
+		// ArrayList<RoomEntity> list = new ArrayList<RoomEntity>();
+		// for (int i = 0; i < 4; i++) {
+		// RoomEntity entity = new RoomEntity();
+		// entity.setRoomName("不作死就不会死");
+		// entity.setWsHost("NO DO NO DIE");
+		// entity.setRoomId("1407979795996334");
+		// entity.setOnlineCount("NO.1");
+		// entity.setCover("http://e.hiphotos.baidu.com/image/pic/item/cc11728b4710b9128462b9fec1fdfc039245220a.jpg");
+		// list.add(entity);
+		// }
+		// mAdapter.putData(list);
 		mListView.onLoadFinish();
 		mListView.onRefreshFinish();
 
