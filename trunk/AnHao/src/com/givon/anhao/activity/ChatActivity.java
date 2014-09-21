@@ -192,10 +192,11 @@ public class ChatActivity extends BaseActivity implements OnClickListener {
 	private boolean isloading;
 	private final int pagesize = 20;
 	private boolean haveMoreData = true;
-	private boolean isAdding = false;
+	private boolean isHello = false;
+	private boolean isFriend = false;
 	private boolean isCanAddFriend = false;
 	private UserBean mUserBean;
-//	private RoomBean mRoomBean;
+	// private RoomBean mRoomBean;
 
 	private Handler micImageHandler = new Handler() {
 		@Override
@@ -309,44 +310,44 @@ public class ChatActivity extends BaseActivity implements OnClickListener {
 		wakeLock = ((PowerManager) getSystemService(Context.POWER_SERVICE)).newWakeLock(
 				PowerManager.SCREEN_DIM_WAKE_LOCK, "demo");
 		// 判断单聊还是群聊
-		chatType = getIntent().getIntExtra("chatType", CHATTYPE_SINGLE);
 		Intent intent = getIntent();
+		chatType = intent.getIntExtra("chatType", CHATTYPE_SINGLE);
 		if (chatType == CHATTYPE_SINGLE) { // 单聊
 			if (intent.hasExtra("userId")) {
-				toChatUsername = getIntent().getStringExtra("userId");
-				((TextView) findViewById(R.id.name)).setText(toChatUsername);
-//				toChatUsername = intent.getStringExtra("userId");
-//				String title = intent.getStringExtra("location");
-//				((TextView) findViewById(R.id.name)).setText(title);
-//				if (intent.hasExtra("data")) {
-//					mUserBean = (UserBean) intent.getSerializableExtra("data");
-//					toChatUsername = mUserBean.getEasemobId();
-//				}
-//				if (AnhaoApplication.getInstance().getContactList()
-//						.containsKey(toChatUsername)) {
-//					isCanAddFriend = false;
-//				}else {
-//					isCanAddFriend = true;
-//				}
+				toChatUsername = intent.getStringExtra("userId");
+				// ((TextView) findViewById(R.id.name)).setText(toChatUsername);
+				// toChatUsername = intent.getStringExtra("userId");
+				String title = intent.getStringExtra("location");
+				((TextView) findViewById(R.id.name)).setText(title);
+				// if (intent.hasExtra("data")) {
+				// mUserBean = (UserBean) intent.getSerializableExtra("data");
+				// toChatUsername = mUserBean.getEasemobId();
+				// }
+				 isFriend = AnhaoApplication.getInstance().getContactListOld()
+						.containsKey(toChatUsername);
+				 isHello = AnhaoApplication.getInstance().getHelloContactList()
+						.containsKey(toChatUsername);
 			}
 		} else {
 			// TODO 需要设置isCanAddFriend 看UserDao里面是否已经存在好友 不存在 为true
-
 			// 群聊
 			findViewById(R.id.container_to_group).setVisibility(View.VISIBLE);
 			findViewById(R.id.container_remove).setVisibility(View.GONE);
 			toChatUsername = getIntent().getStringExtra("groupId");
 			group = EMGroupManager.getInstance().getGroup(toChatUsername);
 			((TextView) findViewById(R.id.name)).setText(group.getGroupName());
-//			toChatUsername = getIntent().getStringExtra("groupId");
-//			if (intent.hasExtra("data")) {
-//				mUserBean = (UserBean) intent.getParcelableExtra("data");
-//				toChatUsername = mUserBean.getEasemobId();
-//			}
-//			isCanAddFriend = false;
-//			group = EMGroupManager.getInstance().getGroup(toChatUsername);
-			
-			
+			// toChatUsername = getIntent().getStringExtra("groupId");
+			// if (intent.hasExtra("data")) {
+			// mUserBean = (UserBean) intent.getParcelableExtra("data");
+			// toChatUsername = mUserBean.getEasemobId();
+			// }
+			// isCanAddFriend = false;
+			// group = EMGroupManager.getInstance().getGroup(toChatUsername);
+
+			isFriend = AnhaoApplication.getInstance().getContactListOld()
+					.containsKey(toChatUsername);
+			 isHello = AnhaoApplication.getInstance().getHelloContactList()
+					.containsKey(toChatUsername);
 			// ((TextView) findViewById(R.id.name)).setText(mRoomBean.getRoomName());
 		}
 		conversation = EMChatManager.getInstance().getConversation(toChatUsername);
@@ -688,29 +689,30 @@ public class ChatActivity extends BaseActivity implements OnClickListener {
 					// 如果是群聊，设置chattype,默认是单聊
 					if (chatType == CHATTYPE_GROUP) {
 						message.setChatType(ChatType.GroupChat);
-					} else {
-						if (isCanAddFriend) {
-							// TODO 这里回复要添加好友
-
-							// try {
-							// mChatUserBean = new ChatBaseBean();
-							// mChatUserBean.setEmId(toChatUsername);
-							// mChatUserBean.setIsFriend(true);
-							// mChatUserBean.setAvatar(avatar);
-							// Dao<ChatBaseBean, Integer> dao = dbHelper.getChatUserDao();
-							// dao.createOrUpdate(mChatUserBean)
-							// } catch (SQLException e) {
-							// // TODO Auto-generated catch block
-							// e.printStackTrace();
-							// }
-						}
-
-						// if (!AnhaoApplication.getInstance().getContactList()
-						// .containsKey(toChatUsername)&&!isAdding) {
-						// isAdding = true;
-						// addContact(toChatUsername);
-						// }
 					}
+					// else {
+					// if (isCanAddFriend) {
+					// // TODO 这里回复要添加好友
+					//
+					// // try {
+					// // mChatUserBean = new ChatBaseBean();
+					// // mChatUserBean.setEmId(toChatUsername);
+					// // mChatUserBean.setIsFriend(true);
+					// // mChatUserBean.setAvatar(avatar);
+					// // Dao<ChatBaseBean, Integer> dao = dbHelper.getChatUserDao();
+					// // dao.createOrUpdate(mChatUserBean)
+					// // } catch (SQLException e) {
+					// // // TODO Auto-generated catch block
+					// // e.printStackTrace();
+					// // }
+					// }
+					//
+					// // if (!AnhaoApplication.getInstance().getContactList()
+					// // .containsKey(toChatUsername)&&!isAdding) {
+					// // isAdding = true;
+					// // addContact(toChatUsername);
+					// // }
+					// }
 					TextMessageBody txtBody = new TextMessageBody(content);
 					// 设置消息body
 					message.addBody(txtBody);
@@ -1082,22 +1084,26 @@ public class ChatActivity extends BaseActivity implements OnClickListener {
 	private class NewMessageBroadcastReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			// TODO 这里收到消息后判断消息是否是当前会话 不是就 return 是就处理掉 加到野招呼中（如果Old中没有加入Hello）
 			String username = intent.getStringExtra("from");
-			String msgid = intent.getStringExtra("msgid");
-			// 收到这个广播的时候，message已经在db和内存里了，可以通过id获取mesage对象
-			UserDaoOld dao = new UserDaoOld(getApplication());
-			User bean = new User();
-//			bean.setEasemobId(username);
-			dao.saveContact(bean);
-			EMMessage message = EMChatManager.getInstance().getMessage(msgid);
-			// 如果是群聊消息，获取到group id
-			if (message.getChatType() == ChatType.GroupChat) {
-				username = message.getTo();
-			}
 			if (!username.equals(toChatUsername)) {
 				// 消息不是发给当前会话，return
 				return;
 			}
+			String msgid = intent.getStringExtra("msgid");
+			// 收到这个广播的时候，message已经在db和内存里了，可以通过id获取mesage对象
+			HelloUserDao dao = new HelloUserDao(getApplication());
+			User bean = new User();
+			// bean.setEasemobId(username);
+			EMMessage message = EMChatManager.getInstance().getMessage(msgid);
+			// 如果是群聊消息，获取到group id
+			if (message.getChatType() == ChatType.GroupChat) {
+				bean.setUserType(1);
+				username = message.getTo();
+			} else {
+				bean.setUserType(0);
+			}
+			dao.saveContact(bean);
 			// conversation =
 			// EMChatManager.getInstance().getConversation(toChatUsername);
 			// 通知adapter有新消息，更新ui
@@ -1484,98 +1490,69 @@ public class ChatActivity extends BaseActivity implements OnClickListener {
 
 	}
 
-	private void addFriend(final UserBean bean,int Type){
-//		if(null==bean){
-//			return;
-//		}
-		switch (Type) {
-		case CHATTYPE_GROUP:
-			
-			
-			break;
-		case CHATTYPE_SINGLE:
-			
+	private void addFriend(final UserBean bean, int Type) {
+		// if(null==bean){
+		// return;
+		// }
+		// switch (Type) {
+		// case CHATTYPE_GROUP:
+		//
+		//
+		// break;
+		// case CHATTYPE_SINGLE:
 
-			// 保存增加的联系人
-			Map<String, User> localUsers = AnhaoApplication.getInstance().getContactListOld();
-			Map<String, User> helloUsers = AnhaoApplication.getInstance().getHelloContactList();
-			Map<String, User> toAddUsers = new HashMap<String, User>();
-				User user = new User();
-				user.setUsername(toChatUsername);
-				String headerName = null;
-				if (!TextUtils.isEmpty(user.getNick())) {
-					headerName = user.getNick();
-				} else {
-					headerName = user.getUsername();
-				}
-				if (toChatUsername.equals(Constant.NEW_FRIENDS_USERNAME)) {
-					user.setHeader("");
-				} else if (Character.isDigit(headerName.charAt(0))) {
-					user.setHeader("#");
-				} else {
-					user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
-							.get(0).target.substring(0, 1).toUpperCase());
-					char header = user.getHeader().toLowerCase().charAt(0);
-					if (header < 'a' || header > 'z') {
-						user.setHeader("#");
-					}
-				}
-				// 暂时有个bug，添加好友时可能会回调added方法两次
-				if (!localUsers.containsKey(toChatUsername)) {
-					//hello中存在好友就删除掉
-					if(helloUsers.containsKey(toChatUsername)){
-						HelloUserDao helloUserDao = new HelloUserDao(this);
-						helloUserDao.deleteContact(toChatUsername);
-					}
-					UserDaoOld userDao = new UserDaoOld(this);
-					userDao.saveContact(user);
-				}
-				toAddUsers.put(toChatUsername, user);
-			localUsers.putAll(toAddUsers);
-			// 刷新ui
-			// if (currentTabIndex == 1)
-			// contactListFragment.refresh();
-
-		
-//			if(isCanAddFriend&&!isAdding){
-//				isAdding=true;
-//				new Thread(new Runnable() {
-//					public void run() {
-//						
-//						try {
-//							//demo写死了个reason，实际应该让用户手动填入
-////							EMContactManager.getInstance().addContact(bean.getEasemobId(), "加个好友呗");
-//							isAdding = false;
-//							isCanAddFriend =false;
-//							UserDao dao = new UserDao(ChatActivity.this);
-//							dao.saveContact(bean);
-//							YeUserDao yeUserDao = new YeUserDao(ChatActivity.this);
-//							yeUserDao.deleteContact(bean.getEasemobId());
-////							runOnUiThread(new Runnable() {
-////								public void run() {
-////									Toast.makeText(getApplicationContext(), "发送请求成功,等待对方验证", 1).show();
-////								}
-////							});
-//						} catch (final Exception e) {
-//							e.printStackTrace();
-//							isAdding = false;
-//							isCanAddFriend =true;
-////							runOnUiThread(new Runnable() {
-////								public void run() {
-////									progressDialog.dismiss();
-////									Toast.makeText(getApplicationContext(), "请求添加好友失败:" + e.getMessage(), 1).show();
-////								}
-////							});
-//						}
-//					}
-//				}).start();
-//			}
-			break;
-
-		default:
-			break;
+		// 保存增加的联系人
+		if(isFriend){
+			return;
 		}
-		
+		Map<String, User> localUsers = AnhaoApplication.getInstance().getContactListOld();
+		Map<String, User> helloUsers = AnhaoApplication.getInstance().getHelloContactList();
+		Map<String, User> toAddUsers = new HashMap<String, User>();
+		User user = new User();
+		user.setUsername(toChatUsername);
+		if (chatType == CHATTYPE_SINGLE) {
+			user.setUserType(0);
+		} else {
+			user.setUserType(1);
+		}
+		String headerName = null;
+		if (!TextUtils.isEmpty(user.getNick())) {
+			headerName = user.getNick();
+		} else {
+			headerName = user.getUsername();
+		}
+		if (toChatUsername.equals(Constant.NEW_FRIENDS_USERNAME)) {
+			user.setHeader("");
+		} else if (Character.isDigit(headerName.charAt(0))) {
+			user.setHeader("#");
+		} else {
+			user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1)).get(0).target
+					.substring(0, 1).toUpperCase());
+			char header = user.getHeader().toLowerCase().charAt(0);
+			if (header < 'a' || header > 'z') {
+				user.setHeader("#");
+			}
+		}
+		// 暂时有个bug，添加好友时可能会回调added方法两次
+		if (!localUsers.containsKey(toChatUsername)) {
+			// hello中存在好友就删除掉
+			if (helloUsers.containsKey(toChatUsername)) {
+				HelloUserDao helloUserDao = new HelloUserDao(this);
+				helloUserDao.deleteContact(toChatUsername);
+				helloUsers.remove(toChatUsername);
+			}
+			UserDaoOld userDao = new UserDaoOld(this);
+			userDao.saveContact(user);
+		}
+		toAddUsers.put(toChatUsername, user);
+		localUsers.putAll(toAddUsers);
+		isFriend = true;
+		// break;
+		//
+		// default:
+		// break;
+		// }
+
 	}
 
 }

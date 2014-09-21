@@ -24,7 +24,6 @@ import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMContact;
 import com.easemob.chat.EMConversation;
 import com.easemob.chat.EMGroup;
-import com.easemob.chat.EMGroupManager;
 import com.easemob.chat.EMMessage;
 import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.ListActivity;
@@ -35,13 +34,14 @@ import com.givon.baseproject.entity.UserBean;
 public class ActYeContactList extends ListActivity<UserBean>{
 	private YeChatHistoryAdapter adapter;
 	private List<EMContact> beanList;
-	private Map<String, User> contactListOld;
+//	private Map<String, User> contactListOld;
 	private Map<String, User> contactHelloList;
+	private boolean hidden;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		contactListOld = AnhaoApplication.getInstance().getContactListOld();
+//		contactListOld = AnhaoApplication.getInstance().getContactListOld();
 		contactHelloList = AnhaoApplication.getInstance().getHelloContactList();
 		initViewData();
 	}
@@ -56,13 +56,9 @@ public class ActYeContactList extends ListActivity<UserBean>{
 	
 	private void initViewData(){
 		beanList =  loadUsersWithRecentChat();
-		
-//		List<EMContact> list = new ArrayList<EMContact>();
-//		for(User bean : beanList.values()){
-//			list.add(new EMContact(bean.getUsername()));
-//		}
 		adapter = new YeChatHistoryAdapter(this, beanList);
 		mListView.setAdapter(adapter);
+		adapter.notifyDataSetChanged();
 	}
 	
 	
@@ -74,11 +70,16 @@ public class ActYeContactList extends ListActivity<UserBean>{
 	 */
 	private List<EMContact> loadUsersWithRecentChat() {
 		List<EMContact> resultList = new ArrayList<EMContact>();
-		for (User user : contactListOld.values()) {
+		for (User user : contactHelloList.values()) {
 			EMConversation conversation = EMChatManager.getInstance().getConversation(
 					user.getUsername());
 			if (conversation.getMsgCount() > 0) {
-				resultList.add(user);
+				if(user.getUserType()==0){
+					resultList.add(user);
+				}else {
+					EMGroup	group = new EMGroup(user.getUsername());
+					resultList.add(group);
+				}
 			}
 		}
 //		for (EMGroup group : EMGroupManager.getInstance().getAllGroups()) {
@@ -120,5 +121,18 @@ public class ActYeContactList extends ListActivity<UserBean>{
 			}
 
 		});
+	}
+	
+	/**
+	 * 刷新页面
+	 */
+	public void refresh() {
+		initViewData();
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+			refresh();
 	}
 }

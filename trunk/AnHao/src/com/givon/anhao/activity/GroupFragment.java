@@ -29,7 +29,11 @@ import com.easemob.exceptions.EaseMobException;
 import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseListFragment;
 import com.givon.anhao.R;
+import com.givon.anhao.db.HelloUserDao;
+import com.givon.anhao.db.UserDao;
+import com.givon.anhao.db.UserDaoOld;
 import com.givon.anhao.db.YeUserDao;
+import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.HttpUtil;
 import com.givon.baseproject.entity.ErrorCode;
 import com.givon.baseproject.entity.RoomBean;
@@ -104,49 +108,83 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 			public void onClick(View v) {
 				// 进入聊天页面
 				if (null != bean) {
-					new Thread(new Runnable() {
+					if (!AnhaoApplication.getInstance().getContactListOld()
+							.containsKey(bean.getGroupId())
+							&& !AnhaoApplication.getInstance().getHelloContactList()
+									.containsKey(bean.getGroupId())) {
+						new Thread(new Runnable() {
 
-						public void run() {
-							// 从服务器获取详情
-							try {
-								final EMGroup group = EMGroupManager.getInstance()
-										.getGroupFromServer(bean.getGroupId());
-								getActivity().runOnUiThread(new Runnable() {
-									public void run() {
-										// 获取详情成功，并且自己不在群中，才让加入群聊
-										if (!group.getMembers().contains(
-												EMChatManager.getInstance().getCurrentUser())) {
-											// 如果是membersOnly的群，需要申请加入，不能直接join
-											try {
-												if (group.isMembersOnly()) {
-													EMGroupManager.getInstance().applyJoinToGroup(
-															bean.getGroupId(), "求加入");
+							public void run() {
+								// 从服务器获取详情
+								try {
+									final EMGroup group = EMGroupManager.getInstance()
+											.getGroupFromServer(bean.getGroupId());
+									getActivity().runOnUiThread(new Runnable() {
+										public void run() {
+											// 获取详情成功，并且自己不在群中，才让加入群聊
+											if (!group.getMembers().contains(
+													EMChatManager.getInstance().getCurrentUser())) {
+												// 如果是membersOnly的群，需要申请加入，不能直接join
+												try {
+													if (group.isMembersOnly()) {
+														EMGroupManager.getInstance()
+																.applyJoinToGroup(
+																		bean.getGroupId(), "求加入");
 
-												} else {
-													EMGroupManager.getInstance().joinGroup(
-															bean.getGroupId());
+													} else {
+														EMGroupManager.getInstance().joinGroup(
+																bean.getGroupId());
+													}
+													if (!AnhaoApplication.getInstance()
+															.getContactListOld()
+															.containsKey(bean.getGroupId())
+															&& !AnhaoApplication.getInstance()
+																	.getHelloContactList()
+																	.containsKey(bean.getGroupId())) {
+														HelloUserDao dao = new HelloUserDao(
+																getActivity());
+														User user = new User();
+														user.setUsername(bean.getGroupId());
+														user.setUserType(1);
+														dao.saveContact(user);
+													}
+													startActChat(bean);
+												} catch (EaseMobException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+											} else {
+												if (!AnhaoApplication.getInstance()
+														.getContactListOld()
+														.containsKey(bean.getGroupId())
+														&& !AnhaoApplication.getInstance()
+																.getHelloContactList()
+																.containsKey(bean.getGroupId())) {
+													HelloUserDao dao = new HelloUserDao(
+															getActivity());
+													User user = new User();
+													user.setUsername(bean.getGroupId());
+													user.setUserType(1);
+													dao.saveContact(user);
 												}
 												startActChat(bean);
-											} catch (EaseMobException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
 											}
-										} else {
-											startActChat(bean);
 										}
-									}
-								});
-							} catch (final EaseMobException e) {
-								e.printStackTrace();
-								getActivity().runOnUiThread(new Runnable() {
-									public void run() {
-										ToastUtil.showMessage("获取群聊信息失败: " + e.getMessage());
-									}
-								});
-							}
+									});
+								} catch (final EaseMobException e) {
+									e.printStackTrace();
+									getActivity().runOnUiThread(new Runnable() {
+										public void run() {
+											ToastUtil.showMessage("获取群聊信息失败: " + e.getMessage());
+										}
+									});
+								}
 
-						}
-					}).start();
+							}
+						}).start();
+					} else {
+						startActChat(bean);
+					}
 					// EMGroupInfo info = new EMGroupInfo(entity.getRoomId(), entity.getRoomName());
 
 				}
@@ -164,9 +202,6 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 		Intent intent = new Intent(getActivity(), ChatActivity.class);
 		intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
 		intent.putExtra("groupId", bean.getGroupId());
-//		YeUserDao dao = new YeUserDao(getActivity());
-//		UserBean userBean = dao.getAUserBean(bean.getGroupId());
-//		intent.putExtra("data", userBean);
 		startActivity(intent);
 
 	}

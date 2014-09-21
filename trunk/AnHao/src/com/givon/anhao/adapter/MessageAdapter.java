@@ -422,8 +422,8 @@ public class MessageAdapter extends BaseAdapter {
 				public void onClick(View v) {
 					try {
 						activity.startActivity(new Intent(activity, ChatActivity.class).putExtra(
-								"userId", getItem(position).getFrom()).putExtra("title",
-								getItem(position).getStringAttribute("location")));
+								"userId", message.getFrom()).putExtra("location",
+										message.getStringAttribute("location")));
 					} catch (EaseMobException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

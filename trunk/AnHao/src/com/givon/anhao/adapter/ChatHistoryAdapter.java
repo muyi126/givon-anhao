@@ -43,6 +43,7 @@ import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.R;
 import com.givon.anhao.activity.ActYeContactList;
 import com.givon.anhao.activity.ChatActivity;
+import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.SmileUtils;
 import com.givon.baseproject.util.BitmapHelp;
 import com.givon.baseproject.util.StringUtil;
@@ -159,6 +160,7 @@ public class ChatHistoryAdapter extends BaseAdapter {
 			if (conversation.getMsgCount() != 0) {
 				// 把最后一条消息的内容作为item的message内容
 				EMMessage lastMessage = conversation.getLastMessage();
+				holder.list_item_layout.setTag(lastMessage);
 				try {
 					if (!StringUtil.isEmpty(lastMessage.getStringAttribute("location"))) {
 						holder.name.setText(lastMessage.getStringAttribute("location"));
@@ -185,7 +187,7 @@ public class ChatHistoryAdapter extends BaseAdapter {
 				}
 			}
 
-			convertView.setOnClickListener(new OnClickListener() {
+			holder.list_item_layout.setOnClickListener(new OnClickListener() {
 
 				@Override
 				public void onClick(View v) {
@@ -196,17 +198,38 @@ public class ChatHistoryAdapter extends BaseAdapter {
 					else {
 						// 进入聊天页面
 						Intent intent = new Intent(context, ChatActivity.class);
+						EMMessage lastMessage = (EMMessage) v.getTag();
+						String loc = "";
+						if(null!=lastMessage){
+							try {
+								loc = lastMessage.getStringAttribute("location");
+							} catch (EaseMobException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
 						if (emContact instanceof EMGroup) {
 							intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
 							intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
+							intent.putExtra("location", loc);
 						} else {
+							intent.putExtra("chatType", ChatActivity.CHATTYPE_SINGLE);
 							intent.putExtra("userId", emContact.getUsername());
+							intent.putExtra("location", loc);
 						}
 						context.startActivity(intent);
 					}
 				}
 			});
 		} else {
+			int conunt = 0;
+			for(User user2 : AnhaoApplication.getInstance().getHelloContactList().values()){
+				EMConversation conversation = EMChatManager.getInstance().getConversation(user2.getUsername());
+				int j = conversation.getUnreadMsgCount();
+				if (j> 0) {
+					conunt+=j;
+				}
+			}
 			convertView.setOnClickListener(new OnClickListener() {
 
 				@Override
@@ -217,6 +240,13 @@ public class ChatHistoryAdapter extends BaseAdapter {
 				}
 
 			});
+			if (conunt > 0) {
+				// 显示与此用户的消息未读数
+				holder.unreadLabel.setText(String.valueOf(conunt));
+				holder.unreadLabel.setVisibility(View.VISIBLE);
+			} else {
+				holder.unreadLabel.setVisibility(View.INVISIBLE);
+			}
 		}
 
 		convertView.setOnLongClickListener(new OnLongClickListener() {

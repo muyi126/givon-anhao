@@ -77,7 +77,7 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		contactListOld = AnhaoApplication.getInstance().getHelloContactList();
+		contactListOld = AnhaoApplication.getInstance().getContactListOld();
 	}
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -95,7 +95,7 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 		// contact list
 		// contactList = AnhaoApplication.getInstance().getContactList();
 		// yeContactList = AnhaoApplication.getInstance().getYeList();
-		contactListOld = AnhaoApplication.getInstance().getHelloContactList();
+		contactListOld = AnhaoApplication.getInstance().getContactListOld();
 		listView = (PullListView) getView().findViewById(R.id.id_pull_listview);
 		listView.setHeaderDividersEnabled(true);
 		listView.setFooterDividersEnabled(false);
@@ -245,7 +245,12 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 			EMConversation conversation = EMChatManager.getInstance().getConversation(
 					user.getUsername());
 			if (conversation.getMsgCount() > 0) {
-				resultList.add(user);
+				if(user.getUserType()==0){
+					resultList.add(user);
+				}else {
+					EMGroup	group = new EMGroup(user.getUsername());
+					resultList.add(group);
+				}
 			}
 		}
 //		for (EMGroup group : EMGroupManager.getInstance().getAllGroups()) {

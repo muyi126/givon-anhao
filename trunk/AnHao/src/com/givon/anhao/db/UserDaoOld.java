@@ -31,7 +31,7 @@ public class UserDaoOld {
 	public static final String TABLE_NAME = "uers";
 	public static final String COLUMN_NAME_ID = "username";
 	public static final String COLUMN_NAME_NICK = "nick";
-	
+	public static final String COLUMN_USER_TYPE = "usertype";
 
 	private DbOpenHelper dbHelper;
 
@@ -51,8 +51,9 @@ public class UserDaoOld {
 			for (User user : contactList) {
 				ContentValues values = new ContentValues();
 				values.put(COLUMN_NAME_ID, user.getUsername());
-				if(user.getNick() != null)
+				if (user.getNick() != null)
 					values.put(COLUMN_NAME_NICK, user.getNick());
+				values.put(COLUMN_USER_TYPE, user.getUserType());
 				db.insert(TABLE_NAME, null, values);
 			}
 		}
@@ -71,17 +72,20 @@ public class UserDaoOld {
 			while (cursor.moveToNext()) {
 				String username = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_ID));
 				String nick = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NICK));
+				int type= cursor.getInt(cursor.getColumnIndex(COLUMN_USER_TYPE));
 				User user = new User();
 				user.setUsername(username);
 				user.setNick(nick);
+				user.setUserType(type);
 				String headerName = null;
 				if (!TextUtils.isEmpty(user.getNick())) {
 					headerName = user.getNick();
 				} else {
 					headerName = user.getUsername();
 				}
-				
-				if (username.equals(Constant.NEW_FRIENDS_USERNAME) || username.equals(Constant.GROUP_USERNAME)) {
+
+				if (username.equals(Constant.NEW_FRIENDS_USERNAME)
+						|| username.equals(Constant.GROUP_USERNAME)) {
 					user.setHeader("");
 				} else if (Character.isDigit(headerName.charAt(0))) {
 					user.setHeader("#");
@@ -99,34 +103,32 @@ public class UserDaoOld {
 		}
 		return users;
 	}
-	
+
 	/**
 	 * 删除一个联系人
 	 * @param username
 	 */
-	public void deleteContact(String username){
+	public void deleteContact(String username) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		if(db.isOpen()){
-			db.delete(TABLE_NAME, COLUMN_NAME_ID + " = ?", new String[]{username});
+		if (db.isOpen()) {
+			db.delete(TABLE_NAME, COLUMN_NAME_ID + " = ?", new String[] { username });
 		}
 	}
-	
-	
+
 	/**
 	 * 保存一个联系人
 	 * @param user
 	 */
-	public void saveContact(User user){
+	public void saveContact(User user) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put(COLUMN_NAME_ID, user.getUsername());
-		if(user.getNick() != null)
+		if (user.getNick() != null)
 			values.put(COLUMN_NAME_NICK, user.getNick());
-		if(db.isOpen()){
+		values.put(COLUMN_USER_TYPE, user.getUserType());
+		if (db.isOpen()) {
 			db.insert(TABLE_NAME, null, values);
 		}
 	}
-	
-	
 
 }

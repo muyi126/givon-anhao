@@ -533,40 +533,28 @@ public class ActAnhaoWelcome extends BaseActivity {
 					try {
 						
 						// demo中简单的处理成每次登陆都去获取好友username，开发者自己根据情况而定
-						List<String> usernames = EMChatManager.getInstance().getContactUserNames();
-						Hashtable<String, EMConversation> eee = EMChatManager.getInstance().getAllConversations();
-						HashMap<String, User> userlist = new HashMap<String, User>();
-						for (String username : usernames) {
-							User user = new User();
-							user.setUsername(username);
-							setUserHearder(username, user);
-							userlist.put(username, user);
-						}
-						for (EMConversation username : eee.values()) {
-							User user = new User();
-							user.setUsername(username.getUserName());
-							setUserHearder(username.getUserName(), user);
-							userlist.put(username.getUserName(), user);
-						}
-//						// 添加user"申请与通知"
-//						User newFriends = new User();
-//						newFriends.setUsername(Constant.NEW_FRIENDS_USERNAME);
-//						newFriends.setNick("申请与通知");
-//						newFriends.setHeader("");
-//						userlist.put(Constant.NEW_FRIENDS_USERNAME, newFriends);
-//						// 添加"群聊"
-//						User groupUser = new User();
-//						groupUser.setUsername(Constant.GROUP_USERNAME);
-//						groupUser.setNick("群聊");
-//						groupUser.setHeader("");
-//						userlist.put(Constant.GROUP_USERNAME, groupUser);
-
-						// 存入内存
-						AnhaoApplication.getInstance().setContactListOld(userlist);
-						// 存入db
-						UserDaoOld dao = new UserDaoOld(ActAnhaoWelcome.this);
-						List<User> users = new ArrayList<User>(userlist.values());
-						dao.saveContactList(users);
+//						List<String> usernames = EMChatManager.getInstance().getContactUserNames();
+//						Hashtable<String, EMConversation> eee = EMChatManager.getInstance().getAllConversations();
+//						HashMap<String, User> userlist = new HashMap<String, User>();
+//						for (String username : usernames) {
+//							User user = new User();
+//							user.setUsername(username);
+//							setUserHearder(username, user);
+//							userlist.put(username, user);
+//						}
+//						for (EMConversation username : eee.values()) {
+//							User user = new User();
+//							user.setUsername(username.getUserName());
+//							setUserHearder(username.getUserName(), user);
+//							userlist.put(username.getUserName(), user);
+//						}
+//
+//						// 存入内存
+//						AnhaoApplication.getInstance().setContactListOld(userlist);
+//						// 存入db
+//						UserDaoOld dao = new UserDaoOld(ActAnhaoWelcome.this);
+//						List<User> users = new ArrayList<User>(userlist.values());
+//						dao.saveContactList(users);
 
 						// 获取群聊列表,sdk会把群组存入到EMGroupManager和db中
 						EMGroupManager.getInstance().getGroupsFromServer();
