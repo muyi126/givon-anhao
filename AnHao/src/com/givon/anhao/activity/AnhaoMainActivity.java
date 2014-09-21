@@ -396,45 +396,52 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 			String msgId = intent.getStringExtra("msgid");
 			// 收到这个广播的时候，message已经在db和内存里了，可以通过id获取mesage对象
 			EMMessage message = EMChatManager.getInstance().getMessage(msgId);
-			System.out.println("NewMessageBroadcastReceiver:");
-			if (ChatType.Chat.name().equals(message.getChatType().name())) {
+			if (!AnhaoApplication.getInstance().getContactListOld().containsKey(message.getFrom())
+					&& !AnhaoApplication.getInstance().getHelloContactList()
+							.containsKey(message.getFrom())) {
 				Map<String, User> localUsers = AnhaoApplication.getInstance().getHelloContactList();
 				Map<String, User> toAddUsers = new HashMap<String, User>();
-				if (!localUsers.containsKey(message.getFrom())) {
-					HelloUserDao dao = new HelloUserDao(context);
-					User user = new User();
-					user.setUsername(message.getFrom());
-					String headerName = null;
-					if (!TextUtils.isEmpty(user.getNick())) {
-						headerName = user.getNick();
-					} else {
-						headerName = user.getUsername();
-					}
-					if (message.getFrom().equals(Constant.NEW_FRIENDS_USERNAME)) {
-						user.setHeader("");
-					} else if (Character.isDigit(headerName.charAt(0))) {
-						user.setHeader("#");
-					} else {
-						user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
-								.get(0).target.substring(0, 1).toUpperCase());
-						char header = user.getHeader().toLowerCase().charAt(0);
-						if (header < 'a' || header > 'z') {
-							user.setHeader("#");
-						}
-					}
-					// 暂时有个bug，添加好友时可能会回调added方法两次
-					if (!localUsers.containsKey(message.getFrom())) {
-						dao.saveContact(user);
-					}
-					try {
-						System.out.println("BroadcastReceiver:"
-								+ ((TextMessageBody) message.getBody()).getMessage());
-					} catch (Exception e) {
-						// TODO: handle exception
-					}
-					toAddUsers.put(message.getFrom(), user);
-					localUsers.putAll(toAddUsers);
+				HelloUserDao dao = new HelloUserDao(context);
+				User user = new User();
+				user.setUsername(message.getFrom());
+				if (message.getChatType() == ChatType.GroupChat) {
+					user.setUserType(1);
+				} else {
+					user.setUserType(0);
 				}
+				String headerName = null;
+				if (!TextUtils.isEmpty(user.getNick())) {
+					headerName = user.getNick();
+				} else {
+					headerName = user.getUsername();
+				}
+				if (message.getFrom().equals(Constant.NEW_FRIENDS_USERNAME)) {
+					user.setHeader("");
+				} else if (Character.isDigit(headerName.charAt(0))) {
+					user.setHeader("#");
+				} else {
+					user.setHeader(HanziToPinyin.getInstance().get(headerName.substring(0, 1))
+							.get(0).target.substring(0, 1).toUpperCase());
+					char header = user.getHeader().toLowerCase().charAt(0);
+					if (header < 'a' || header > 'z') {
+						user.setHeader("#");
+					}
+				}
+				// 暂时有个bug，添加好友时可能会回调added方法两次
+				if (!localUsers.containsKey(message.getFrom())) {
+					dao.saveContact(user);
+				}
+				try {
+//					System.out.println("BroadcastReceiver:"
+//							+ ((TextMessageBody) message.getBody()).getMessage());
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+				toAddUsers.put(message.getFrom(), user);
+				localUsers.putAll(toAddUsers);
+			
+			} else {
+				
 			}
 			// 刷新bottom bar消息未读数
 			updateUnreadLabel();

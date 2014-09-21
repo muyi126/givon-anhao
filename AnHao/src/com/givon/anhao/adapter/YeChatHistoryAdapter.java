@@ -133,6 +133,7 @@ public class YeChatHistoryAdapter extends BaseAdapter {
 		if (conversation.getMsgCount() != 0) {
 			// 把最后一条消息的内容作为item的message内容
 			EMMessage lastMessage = conversation.getLastMessage();
+			holder.list_item_layout.setTag(lastMessage);
 			holder.message.setText(
 					SmileUtils.getSmiledText(context, getMessageDigest(lastMessage, context)),
 					BufferType.SPANNABLE);
@@ -152,7 +153,7 @@ public class YeChatHistoryAdapter extends BaseAdapter {
 			}
 		}
 
-		convertView.setOnClickListener(new OnClickListener() {
+		holder.list_item_layout.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
@@ -162,12 +163,25 @@ public class YeChatHistoryAdapter extends BaseAdapter {
 					ToastUtil.showMessage("不能和自己聊天");
 				else {
 					// 进入聊天页面
+					EMMessage lastMessage = (EMMessage) v.getTag();
+					String loc = "";
+					if(null!=lastMessage){
+						try {
+							loc = lastMessage.getStringAttribute("location");
+						} catch (EaseMobException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
 					Intent intent = new Intent(context, ChatActivity.class);
 					if (emContact instanceof EMGroup) {
 						intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
 						intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
+						intent.putExtra("location", loc);
 					} else {
+						intent.putExtra("chatType", ChatActivity.CHATTYPE_SINGLE);
 						intent.putExtra("userId", emContact.getUsername());
+						intent.putExtra("location", loc);
 					}
 					context.startActivity(intent);
 				}
@@ -287,7 +301,7 @@ public class YeChatHistoryAdapter extends BaseAdapter {
 	@Override
 	public EMContact getItem(int position) {
 		// TODO Auto-generated method stub
-		return position == 0 ? new EMContact("野招呼") : list.get(position - 1);
+		return list.get(position);
 	}
 
 	@Override

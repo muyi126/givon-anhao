@@ -31,6 +31,7 @@ public class HelloUserDao {
 	public static final String TABLE_NAME = "hello_uers";
 	public static final String COLUMN_NAME_ID = "username";
 	public static final String COLUMN_NAME_NICK = "nick";
+	public static final String COLUMN_USER_TYPE = "usertype";
 	
 
 	private DbOpenHelper dbHelper;
@@ -53,6 +54,7 @@ public class HelloUserDao {
 				values.put(COLUMN_NAME_ID, user.getUsername());
 				if(user.getNick() != null)
 					values.put(COLUMN_NAME_NICK, user.getNick());
+				values.put(COLUMN_USER_TYPE, user.getUserType());
 				db.insert(TABLE_NAME, null, values);
 			}
 		}
@@ -71,9 +73,11 @@ public class HelloUserDao {
 			while (cursor.moveToNext()) {
 				String username = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_ID));
 				String nick = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NICK));
+				int type= cursor.getInt(cursor.getColumnIndex(COLUMN_USER_TYPE));
 				User user = new User();
 				user.setUsername(username);
 				user.setNick(nick);
+				user.setUserType(type);
 				String headerName = null;
 				if (!TextUtils.isEmpty(user.getNick())) {
 					headerName = user.getNick();
@@ -122,6 +126,7 @@ public class HelloUserDao {
 		values.put(COLUMN_NAME_ID, user.getUsername());
 		if(user.getNick() != null)
 			values.put(COLUMN_NAME_NICK, user.getNick());
+		values.put(COLUMN_USER_TYPE, user.getUserType());
 		if(db.isOpen()){
 			db.insert(TABLE_NAME, null, values);
 		}

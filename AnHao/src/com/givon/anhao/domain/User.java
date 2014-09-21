@@ -18,6 +18,7 @@ import com.easemob.chat.EMContact;
 public class User extends EMContact {
 	private int unreadMsgCount;
 	private String header;
+	private int userType;// 0 是单   1 是群
 
 	public String getHeader() {
 		return header;
@@ -33,6 +34,15 @@ public class User extends EMContact {
 
 	public void setUnreadMsgCount(int unreadMsgCount) {
 		this.unreadMsgCount = unreadMsgCount;
+	}
+	
+
+	public int getUserType() {
+		return userType;
+	}
+
+	public void setUserType(int userType) {
+		this.userType = userType;
 	}
 
 	@Override
