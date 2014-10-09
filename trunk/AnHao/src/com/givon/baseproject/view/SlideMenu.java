@@ -16,7 +16,12 @@ import java.util.List;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -29,7 +34,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.R;
+import com.givon.anhao.widget.RoundImageView;
+import com.givon.baseproject.entity.LoginBean;
+import com.givon.baseproject.util.ShareCookie;
+import com.givon.baseproject.util.StringUtil;
+import com.lidroid.xutils.BitmapUtils;
+import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
+import com.lidroid.xutils.bitmap.callback.BitmapLoadCallBack;
+import com.lidroid.xutils.bitmap.callback.BitmapLoadFrom;
+import com.lidroid.xutils.bitmap.callback.DefaultBitmapLoadCallBack;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ObjectAnimator;
@@ -61,21 +76,91 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 	private List<SlideMenuItem> menuItems;
 	private DisplayMetrics displayMetrics = new DisplayMetrics();
 	private OnMenuListener menuListener;
+	private RoundImageView mHeaderImageView;
+	private onClickHeaderListener oClickHeaderListener;
+	private BitmapUtils bitmapUtils;
+
+	public onClickHeaderListener getoClickHeaderListener() {
+		return oClickHeaderListener;
+	}
+
+	public void setoClickHeaderListener(onClickHeaderListener oClickHeaderListener) {
+		this.oClickHeaderListener = oClickHeaderListener;
+	}
 
 	public SlideMenu(Context context) {
 		super(context);
 		initViews(context);
 	}
 
-	private void initViews(Context context) {
+	public void initViews(Context context) {
 		LayoutInflater inflater = (LayoutInflater) context
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		inflater.inflate(R.layout.slidemenu, this);
+
+		bitmapUtils = new BitmapUtils(context);
+		bitmapUtils.configDefaultLoadingImage(R.drawable.logo_icon_wite);
+		bitmapUtils.configDefaultLoadFailedImage(R.drawable.logo_icon_wite);
+		bitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
 		sv_menu = (ScrollView) findViewById(R.id.sv_menu);
 		mImageShadow = (ImageView) findViewById(R.id.iv_shadow);
 		mLayoutMenu = (LinearLayout) findViewById(R.id.layout_menu);
 		mBackground = (ImageView) findViewById(R.id.iv_background);
+		mHeaderImageView = (RoundImageView) findViewById(R.id.iv_header);
+		mHeaderImageView.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				if (null != oClickHeaderListener) {
+					oClickHeaderListener.onClick(v);
+				}
+			}
+		});
+		initHeaderView(context);
 	}
+
+	public void initHeaderView(Context context) {
+		if (ShareCookie.isLoginAuth()) {
+			LoginBean Info = ShareCookie.getUserInfo();
+			if (null != Info && !StringUtil.isEmpty(Info.getAvatar())) {
+				System.out.println("Info:" + Info.getAvatar());
+				mHeaderImageView.cleanbitmap();
+				BitmapUtils bitmapUtils = new BitmapUtils(context);
+				bitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
+				bitmapUtils.configDefaultBitmapMaxSize(100, 100);
+				if(null!=mHeaderImageView){
+					bitmapUtils.display(mHeaderImageView, Info.getAvatar());
+				}
+			}
+		}
+
+	}
+
+	BitmapLoadCallBack<ImageView> callback = new DefaultBitmapLoadCallBack<ImageView>() {
+		@Override
+		public void onLoadStarted(ImageView container, String uri, BitmapDisplayConfig config) {
+			System.out.println("Info:" + uri);
+			super.onLoadStarted(container, uri, config);
+		}
+
+		@Override
+		public void onLoadCompleted(ImageView container, String uri, Bitmap bitmap,
+				BitmapDisplayConfig config, BitmapLoadFrom from) {
+			System.out.println("Info:" + uri);
+			super.onLoadCompleted(container, uri, bitmap, config, from);
+		}
+	};
+
+	private void fadeInDisplay(View imageView, Bitmap bitmap) {
+		final TransitionDrawable transitionDrawable = new TransitionDrawable(new Drawable[] {
+				TRANSPARENT_DRAWABLE, new BitmapDrawable(imageView.getResources(), bitmap) });
+
+		((ImageView) imageView).setImageDrawable(transitionDrawable);
+		transitionDrawable.startTransition(500);
+	}
+
+	private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(
+			android.R.color.transparent);
 
 	/**
 	 * 这个方法用来设置菜单项需要显示到哪一个activity
@@ -189,6 +274,7 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 		if (isOpened) {
 			isOpened = false;
 			scaleUp_activity.start();
+			closeMenuDelay();
 			ignoredViews.addAll(ignoredViewsBack);
 		}
 	}
@@ -255,15 +341,31 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 	 * 延迟显示菜单（实现菜单逐个蹦出来的效果）
 	 */
 	private void showMenuDelay() {
+		// sv_menu.removeAllViews();
 		mLayoutMenu.removeAllViews();
+		showHMenuItem(mHeaderImageView, 0);
 		for (int i = 0; i < menuItems.size(); i++)
 			showMenuItem(menuItems.get(i), i);
 	}
 
 	/**
+	 * 延迟关闭菜单（实现菜单逐个蹦出来的效果）
+	 */
+	private void closeMenuDelay() {
+		// sv_menu.removeAllViews();
+		mLayoutMenu.removeAllViews();
+		closeMenuItem(mHeaderImageView, 0);
+		for (int i = 0; i < menuItems.size(); i++)
+			closeMenuItem(menuItems.get(i), i);
+		// for(int i=0;i<sv_menu.getChildCount();i++){
+		// closeMenuItem(sv_menu.getChildAt(i), i);
+		// }
+	}
+
+	/**
 	 * 显示菜单
 	 */
-	private void showMenuItem(SlideMenuItem menuItem, int menu_index) {
+	private void showMenuItem(View menuItem, int menu_index) {
 		mLayoutMenu.addView(menuItem);
 		ViewHelper.setAlpha(menuItem, 0);
 		AnimatorSet scaleUp = new AnimatorSet();
@@ -277,10 +379,44 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 		scaleUp.setDuration(400).start();
 	}
 
+	/**
+	 * 显示头像
+	 */
+	private void showHMenuItem(View menuItem, int menu_index) {
+		ViewHelper.setAlpha(menuItem, 0);
+		AnimatorSet scaleUp = new AnimatorSet();
+		scaleUp.playTogether(ObjectAnimator.ofFloat(menuItem, "translationX", -100.f, 0.0f),
+				ObjectAnimator.ofFloat(menuItem, "alpha", 0.0f, 1.0f));
+
+		scaleUp.setInterpolator(AnimationUtils.loadInterpolator(activity,
+				android.R.anim.anticipate_overshoot_interpolator));
+		// with animation;
+		scaleUp.setStartDelay(50 * menu_index);
+		scaleUp.setDuration(400).start();
+	}
+
+	/**
+	 * 关闭菜单
+	 */
+	private void closeMenuItem(View view, int menu_index) {
+		AnimatorSet scaleUp = new AnimatorSet();
+		scaleUp.playTogether(ObjectAnimator.ofFloat(view, "translationX", 0.0f, -100.f),
+				ObjectAnimator.ofFloat(view, "alpha", 1.0f, 0.0f));
+
+		scaleUp.setInterpolator(AnimationUtils.loadInterpolator(activity,
+				android.R.anim.anticipate_overshoot_interpolator));
+		// with animation;
+		scaleUp.setStartDelay(50 * menu_index);
+		scaleUp.setDuration(400).start();
+	}
+
 	private void buildAnimationSet() {
-		scaleUp_activity = buildScaleUpAnimation(view_activity, 1.0f, 1.0f);
-		scaleUp_shadow = buildScaleUpAnimation(mImageShadow, 1.0f, 1.0f);
-		scaleDown_activity = buildScaleDownAnimation(view_activity, 0.5f, 0.5f);
+		scaleUp_activity = buildScaleUpAnimation(view_activity, AnhaoApplication.mWidth * 1.0f,
+				AnhaoApplication.mWidth * 1.0f);
+		scaleUp_shadow = buildScaleUpAnimation(mImageShadow, AnhaoApplication.mWidth * 1.0f,
+				AnhaoApplication.mWidth * 1.0f);
+		scaleDown_activity = buildScaleDownAnimation(view_activity, AnhaoApplication.mWidth * 0.5f,
+				AnhaoApplication.mWidth * 0.5f);
 		scaleDown_shadow = buildScaleDownAnimation(mImageShadow, shadow_ScaleX, 0.475f);
 		scaleUp_activity.addListener(animationListener);
 		scaleUp_activity.playTogether(scaleUp_shadow);
@@ -299,12 +435,12 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 	private AnimatorSet buildScaleDownAnimation(View target, float targetScaleX, float targetScaleY) {
 		int pivotX = (int) (getScreenWidth() * 1.5);
 		int pivotY = (int) (getScreenHeight() * 0.5);
-
 		ViewHelper.setPivotX(target, pivotX);
 		ViewHelper.setPivotY(target, pivotY);
 		AnimatorSet scaleDown = new AnimatorSet();
-		scaleDown.playTogether(ObjectAnimator.ofFloat(target, "scaleX", targetScaleX),
-				ObjectAnimator.ofFloat(target, "scaleY", targetScaleY));
+		// scaleDown.playTogether(ObjectAnimator.ofFloat(target, "scaleX", targetScaleX),
+		// ObjectAnimator.ofFloat(target, "scaleY", targetScaleY));
+		scaleDown.playTogether(ObjectAnimator.ofFloat(target, "translationX", targetScaleX));
 
 		scaleDown.setInterpolator(AnimationUtils.loadInterpolator(activity,
 				android.R.anim.decelerate_interpolator));
@@ -322,8 +458,9 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 	 */
 	private AnimatorSet buildScaleUpAnimation(View target, float targetScaleX, float targetScaleY) {
 		AnimatorSet scaleUp = new AnimatorSet();
-		scaleUp.playTogether(ObjectAnimator.ofFloat(target, "scaleX", targetScaleX),
-				ObjectAnimator.ofFloat(target, "scaleY", targetScaleY));
+		scaleUp.playTogether(ObjectAnimator.ofFloat(target, "translationX", 0));
+		// scaleUp.playTogether(ObjectAnimator.ofFloat(target, "scaleX", targetScaleX),
+		// ObjectAnimator.ofFloat(target, "scaleY", targetScaleY));
 		scaleUp.setDuration(250);
 		return scaleUp;
 	}
@@ -376,16 +513,19 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		boolean t = gestureDetector.onTouchEvent(event);
-//		System.out.println("onTouchEvent----slidemenu "+t);
-		return true;
+		 System.out.println("onTouchEvent----slidemenu "+t);
+		 if(isOpened&&!t){
+			 closeMenu();
+		 }
+		return t;
 	}
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		gestureDetector.onTouchEvent(ev);
 		boolean t = super.onInterceptTouchEvent(ev);
-//		System.out.println("onInterceptTouchEvent----slidemenu "+t);
-		return t;
+		 System.out.println("onInterceptTouchEvent----slidemenu "+t);
+		return super.onInterceptTouchEvent(ev);
 	}
 
 	@Override
@@ -455,4 +595,8 @@ public class SlideMenu extends FrameLayout implements GestureDetector.OnGestureL
 		public void closeMenu();
 	}
 
+	public interface onClickHeaderListener {
+		void onClick(View v);
+
+	}
 }

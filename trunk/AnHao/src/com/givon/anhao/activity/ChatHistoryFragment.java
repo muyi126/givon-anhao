@@ -91,11 +91,9 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 				Context.INPUT_METHOD_SERVICE);
 		errorItem = (RelativeLayout) getView().findViewById(R.id.rl_error_item);
 		errorText = (TextView) errorItem.findViewById(R.id.tv_connect_errormsg);
-		// mAppTitleBar = (AppTitleBar) getView().findViewById(R.id.titlebar);
-		// contact list
-		// contactList = AnhaoApplication.getInstance().getContactList();
-		// yeContactList = AnhaoApplication.getInstance().getYeList();
-		contactListOld = AnhaoApplication.getInstance().getContactListOld();
+		if(null==contactListOld){
+			contactListOld = AnhaoApplication.getInstance().getContactListOld();
+		}
 		listView = (PullListView) getView().findViewById(R.id.id_pull_listview);
 		listView.setHeaderDividersEnabled(true);
 		listView.setFooterDividersEnabled(false);
@@ -103,27 +101,7 @@ public class ChatHistoryFragment extends BaseFragment implements PullListViewLis
 		adapter = new ChatHistoryAdapter(getActivity(), loadUsersWithRecentChat());
 		// 设置adapter
 		listView.setAdapter(adapter);
-		// listView.setOnItemClickListener(new OnItemClickListener() {
-		//
-		// @Override
-		// public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-		// EMContact emContact = adapter.getItem(position);
-		// if (adapter.getItem(position).getUsername().equals(AnhaoApplication.getInstance().getUserName()))
-		// Toast.makeText(getActivity(), "不能和自己聊天", 0).show();
-		// else {
-		// // 进入聊天页面
-		// Intent intent = new Intent(getActivity(), ChatActivity.class);
-		// if (emContact instanceof EMGroup) {
-		// intent.putExtra("chatType", ChatActivity.CHATTYPE_GROUP);
-		// intent.putExtra("groupId", ((EMGroup) emContact).getGroupId());
-		// } else {
-		// intent.putExtra("userId", emContact.getUsername());
-		// }
-		// startActivity(intent);
-		// }
-		// }
-		// });
-
+		listView.setmSlideMenu(((AnhaoMainActivity) getActivity()).mSlideMenu);
 		// 注册上下文菜单
 		registerForContextMenu(listView);
 

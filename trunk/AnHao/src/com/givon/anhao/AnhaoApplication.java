@@ -59,8 +59,12 @@ import com.givon.baseproject.entity.UserBean;
 import com.givon.baseproject.util.BitmapHelp;
 import com.givon.baseproject.util.ShareCookie;
 import com.givon.baseproject.util.StringUtil;
+import com.givon.baseproject.util.TimeToUtil;
 import com.lidroid.xutils.BitmapUtils;
+import com.qiniu.utils.TokenUtil;
 import com.umeng.analytics.MobclickAgent;
+import com.umeng.socialize.controller.UMServiceFactory;
+import com.umeng.socialize.controller.UMSocialService;
 
 public class AnhaoApplication extends Application {
 
@@ -79,6 +83,8 @@ public class AnhaoApplication extends Application {
 	private static Typeface typeface;
 	private LocationManager locationManager;
 	private LocationListener locationListener;
+	public static int mWidth;
+	public static int mHeight;
 	// 定位相关
 	LocationClient mLocClient;
 	public MyLocationListenner myListener = new MyLocationListenner();
@@ -88,7 +94,9 @@ public class AnhaoApplication extends Application {
 	private static double latitude = 30;
 	private static double longtitude = 104;
 	public static BitmapUtils bitmapUtils;
-
+	public static String bucketName = "anhao";
+	// 1*1*60*60UL
+	public static long deadline = TimeToUtil.getSystemTime()/1000+1 * 1 * 60 * 60L;
 	public static Typeface getTypeface() {
 		return typeface;
 	}
@@ -107,6 +115,7 @@ public class AnhaoApplication extends Application {
 		}
 		return "";
 	}
+
 	public static String getAddrStr() {
 		if (null != lastLocation) {
 			if (!StringUtil.isEmpty(lastLocation.getAddrStr())) {
@@ -117,8 +126,6 @@ public class AnhaoApplication extends Application {
 		}
 		return "";
 	}
-	
-	
 
 	public static double getLatitude() {
 		return latitude;
@@ -139,6 +146,8 @@ public class AnhaoApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		mWidth = getResources().getDisplayMetrics().widthPixels;
+		mHeight = getResources().getDisplayMetrics().heightPixels;
 		bitmapUtils = BitmapHelp.getBitmapUtils(this);
 		bitmapUtils.configDefaultLoadingImage(R.drawable.ic_launcher);
 		bitmapUtils.configDefaultLoadFailedImage(R.drawable.default_avatar);
@@ -228,21 +237,21 @@ public class AnhaoApplication extends Application {
 	// List<String> list = new ArrayList<String>();
 	// list.add("1406713081205");
 	// options.setReceiveNotNoifyGroup(list);
-	
+
 	/**
 	 * 获取内存中好友user list
 	 * 
 	 * @return
 	 */
 	public Map<String, User> getContactListOld() {
-		if(getUserName() != null &&contactListOld == null)
-		{
+		if (getUserName() != null && contactListOld == null) {
 			UserDaoOld dao = new UserDaoOld(applicationContext);
 			// 获取本地好友user list到内存,方便以后获取好友list
 			contactListOld = dao.getContactList();
 		}
 		return contactListOld;
 	}
+
 	/**
 	 * 设置好友user list到内存中
 	 * 
@@ -251,22 +260,21 @@ public class AnhaoApplication extends Application {
 	public void setContactListOld(Map<String, User> contactList) {
 		this.contactListOld = contactList;
 	}
-	
-	
+
 	/**
 	 * 获取内存中好友user list
 	 * 
 	 * @return
 	 */
 	public Map<String, User> getHelloContactList() {
-		if(getUserName() != null &&contactHelloList == null)
-		{
+		if (getUserName() != null && contactHelloList == null) {
 			HelloUserDao dao = new HelloUserDao(applicationContext);
 			// 获取本地好友user list到内存,方便以后获取好友list
 			contactHelloList = dao.getContactList();
 		}
 		return contactHelloList;
 	}
+
 	/**
 	 * 设置好友user list到内存中
 	 * 
@@ -275,8 +283,7 @@ public class AnhaoApplication extends Application {
 	public void setHelloContactList(Map<String, User> contactList) {
 		this.contactHelloList = contactList;
 	}
-	
-	
+
 	/**
 	 * 获取内存中好友user list
 	 * 
@@ -290,9 +297,7 @@ public class AnhaoApplication extends Application {
 		}
 		return contactList;
 	}
-	
-	
-	
+
 	/**
 	 * 获取内存中野招呼好友user list
 	 * 
@@ -301,17 +306,17 @@ public class AnhaoApplication extends Application {
 	public HashMap<String, UserBean> getYeList() {
 		if (getUserName() != null && yeContactList == null) {
 			// 获取本地好友user list到内存,方便以后获取好友list
-			if(contactList==null){
+			if (contactList == null) {
 				getContactList();
 			}
 			YeUserDao yeDao = new YeUserDao(applicationContext);
 			yeContactList = yeDao.getContactList();
 			for (UserBean user : contactList.values()) {
-				for(UserBean user2 : yeContactList.values()){
+				for (UserBean user2 : yeContactList.values()) {
 					String userEid = user.getEid();
 					String userEid2 = user2.getEid();
-					if(!StringUtil.isEmpty(userEid)&&!StringUtil.isEmpty(userEid2)){
-						if(userEid.equals(userEid2)){
+					if (!StringUtil.isEmpty(userEid) && !StringUtil.isEmpty(userEid2)) {
+						if (userEid.equals(userEid2)) {
 							yeDao.deleteContact(userEid);
 							yeContactList.remove(userEid);
 						}

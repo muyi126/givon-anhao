@@ -13,6 +13,9 @@
  */
 package com.givon.anhao.activity;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,18 +26,34 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Bitmap.CompressFormat;
+import android.media.ThumbnailUtils;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.support.httpclient.HttpCallBack;
+import com.android.support.httpclient.HttpClientAsync;
+import com.android.support.httpclient.HttpParams;
 import com.baidu.mapapi.SDKInitializer;
 import com.easemob.chat.ConnectionListener;
 import com.easemob.chat.EMChat;
@@ -49,24 +68,39 @@ import com.easemob.chat.EMMessage.Type;
 import com.easemob.chat.EMNotifier;
 import com.easemob.chat.GroupChangeListener;
 import com.easemob.chat.TextMessageBody;
+import com.easemob.util.DensityUtil;
+import com.easemob.util.EMLog;
 import com.easemob.util.HanziToPinyin;
+import com.easemob.util.PathUtil;
 import com.givon.anhao.AnhaoApplication;
 import com.givon.anhao.BaseFragmentActivity;
 import com.givon.anhao.Constant;
 import com.givon.anhao.R;
 import com.givon.anhao.db.HelloUserDao;
 import com.givon.anhao.db.InviteMessgeDao;
-import com.givon.anhao.db.UserDao;
 import com.givon.anhao.db.UserDaoOld;
 import com.givon.anhao.domain.InviteMessage;
 import com.givon.anhao.domain.InviteMessage.InviteMesageStatus;
 import com.givon.anhao.domain.User;
 import com.givon.anhao.utils.CommonUtils;
-import com.givon.baseproject.entity.UserBean;
+import com.givon.anhao.utils.HttpUtil;
+import com.givon.baseproject.entity.BaseEntity;
+import com.givon.baseproject.entity.ErrorCode;
+import com.givon.baseproject.entity.LoginBean;
+import com.givon.baseproject.util.ShareCookie;
+import com.givon.baseproject.util.StringUtil;
 import com.givon.baseproject.util.ToastUtil;
 import com.givon.baseproject.view.AppTitleBar;
 import com.givon.baseproject.view.SlideMenu;
+import com.givon.baseproject.view.SlideMenu.onClickHeaderListener;
 import com.givon.baseproject.view.SlideMenuItem;
+import com.qiniu.auth.Authorizer;
+import com.qiniu.io.IO;
+import com.qiniu.rs.CallBack;
+import com.qiniu.rs.CallRet;
+import com.qiniu.rs.PutExtra;
+import com.qiniu.rs.UploadCallRet;
+import com.qiniu.utils.TokenUtil;
 
 public class AnhaoMainActivity extends BaseFragmentActivity {
 
@@ -84,20 +118,20 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 	private Fragment[] fragments;
 	private int index;
 	private RelativeLayout[] tab_containers;
+	private File cameraFile;
 	// 当前fragment的index
 	private int currentTabIndex;
 	private NewMessageBroadcastReceiver msgReceiver;
+
 	// 账号在别处登录
 	private boolean isConflict = false;
 	public static SlideMenu mSlideMenu;
 	private SlideMenuItem mItemHome;
 	private SlideMenuItem mItemSet;
-	// private SlideMenuItem mItemOrders;
-	// private SlideMenuItem mItemMyTianGou;
-	// private SlideMenuItem mItemMore;
-	// private SlideMenuItem mItemLogin;
 	private AppTitleBar mTitleBar;
 	private boolean isGroup = true;
+	private PopupWindow mPopupWindow;
+	private WindowManager.LayoutParams mWL;
 
 	public class SDKReceiver extends BroadcastReceiver {
 		public void onReceive(Context context, Intent intent) {
@@ -116,6 +150,7 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		mWL = getWindow().getAttributes();
 		initView();
 		mTitleBar = (AppTitleBar) findViewById(R.id.titlebar);
 		mTitleBar.setBackOnClickListener(new OnClickListener() {
@@ -167,34 +202,13 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 		// contactListFragment = new ContactlistFragment();
 		groupFragment = new GroupFragment();
 
-		// settingFragment = new SettingsFragment();
-		// try {
-		// try {
-		// EMGroupManager.getInstance().applyJoinToGroup("1407979795996334",AnhaoApplication.getInstance().getUserName());
-		// } catch (EaseMobException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// List<EMGroup> dasd = EMGroupManager.getInstance().getAllGroups();
-		// } catch (EaseMobException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// fragments = new Fragment[] { chatHistoryFragment, contactListFragment, settingFragment };
-		// // 添加显示第一个fragment
-		// getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, chatHistoryFragment)
-		// .add(R.id.fragment_container, contactListFragment).hide(contactListFragment).show(chatHistoryFragment)
-		// .commit();
-		// EMGroup group = new EMGroup("1407979795996334");
-		// fragments = new Fragment[] { groupFragment, contactListFragment, settingFragment };
 		fragments = new Fragment[] { groupFragment, chatHistoryFragment };
 		// 添加显示第一个fragment
 		getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, groupFragment)
-				.add(R.id.fragment_container, chatHistoryFragment).hide(chatHistoryFragment).show(groupFragment).commit();
+				.add(R.id.fragment_container, chatHistoryFragment).hide(chatHistoryFragment)
+				.show(groupFragment).commit();
 		mSlideMenu.clearIgnoredViewList();
 
-		
-		
 		// 注册一个接收消息的BroadcastReceiver
 		msgReceiver = new NewMessageBroadcastReceiver();
 		IntentFilter intentFilter = new IntentFilter(EMChatManager.getInstance()
@@ -224,39 +238,253 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 	private void initView() {
 		unreadLabel = (TextView) findViewById(R.id.unread_msg_number);
 		unreadAddressLable = (TextView) findViewById(R.id.unread_address_number);
-		// mTabs = new Button[3];
-		// mTabs[0] = (Button) findViewById(R.id.btn_conversation);
-		// mTabs[1] = (Button) findViewById(R.id.btn_address_list);
-		// mTabs[2] = (Button) findViewById(R.id.btn_setting);
-		// // 把第一个tab设为选中状态
-		// mTabs[0].setSelected(true);
-
 		mSlideMenu = new SlideMenu(this);
 		mSlideMenu.setBackground(R.drawable.chat_bg);
 		mSlideMenu.attachToActivity(this);
 		mItemHome = new SlideMenuItem(this, R.drawable.ic_home_home, "首页");
 		mItemSet = new SlideMenuItem(this, R.drawable.ic_home_yugao, "设置");
-		// mItemOrders = new SlideMenuItem(this, R.drawable.ic_home_mygoods,
-		// "首页");
-		// mItemMyTianGou = new SlideMenuItem(this, R.drawable.ic_home_mytiangou,
-		// "首页");
-		// mItemMore = new SlideMenuItem(this, R.drawable.ic_home_more,
-		// "首页");
-		// if (!ShareCookie.isLoginAuth()) {
-		// mItemLogin = new SlideMenuItem(this, R.drawable.ic_home_login,
-		// R.string.home_login);
-		// } else {
-		// mItemLogin = new SlideMenuItem(this, R.drawable.ic_home_login,
-		// R.string.home_logout);
-		// }
+		mSlideMenu.setoClickHeaderListener(new onClickHeaderListener() {
+			@Override
+			public void onClick(View v) {
+				// 点击头像
+				getPopupWindowInstance();
+				mPopupWindow.showAtLocation(v, Gravity.BOTTOM, 0, 0);
+			}
+		});
 
 		MenuClickListener listener = new MenuClickListener();
 		mItemHome.setOnClickListener(listener);
 		mItemSet.setOnClickListener(listener);
-
 		mSlideMenu.addMenuItem(mItemHome);
 		mSlideMenu.addMenuItem(mItemSet);
 
+	}
+
+	/*
+	 * PopupWindow
+	 */
+	private void getPopupWindowInstance() {
+		if (null != mPopupWindow) {
+			mPopupWindow.dismiss();
+			mPopupWindow = null;
+			mWL.alpha = 1;
+			getWindow().setAttributes(mWL);
+			return;
+		} else {
+			mWL.alpha = 0.5f; // 0.0-1.0
+			getWindow().setAttributes(mWL);
+			initPopuptWindow();
+		}
+	}
+
+	volatile boolean uploading = false;
+
+	/**
+	 * 普通上传文件
+	 * @param uri
+	 */
+	private void doUpload(Uri uri) {
+		String uptoken = TokenUtil.getToken("anhao", AnhaoApplication.deadline);
+		if (uploading) {
+			ToastUtil.showMessage("上传中，请稍后");
+			return;
+		}
+		Authorizer auth = new Authorizer();
+		auth.setUploadToken(uptoken);
+		uploading = true;
+		String key = IO.UNDEFINED_KEY; // 自动生成key
+		showWaitingDialog("上传中");
+		// 返回 UploadTaskExecutor ，可执行cancel，见 MyResumableActivity
+		Context context = this.getApplicationContext();
+		IO.putFile(context, auth, key, uri, null, new CallBack() {
+			@Override
+			public void onProcess(long current, long total) {
+				int percent = (int) (current * 100 / total);
+			}
+
+			@Override
+			public void onSuccess(UploadCallRet ret) {
+				uploading = false;
+				String key = ret.getKey();
+				String redirect = HttpUtil.AVATARURL + key;
+				upLoadHeader(ret.getKey());
+				// ToastUtil.showMessage("上传成功! ret: " + ret.toString() + "  \r\n可到" + redirect
+//				 + " 访问");
+//				System.out.println("上传成功! ret: " + ret.toString() + "  \r\n可到" + redirect
+//						 + " 访问");
+			}
+
+			@Override
+			public void onFailure(CallRet ret) {
+				dismissWaitingDialog();
+				uploading = false;
+				ToastUtil.showMessage("错误: " + ret.toString());
+			}
+		});
+	}
+
+	private void upLoadHeader(final String key) {
+		HttpClientAsync httpClientAsync = HttpClientAsync.getInstance();
+		HttpParams params = new HttpParams();
+		params.put("avatar", HttpUtil.AVATARURL + key);
+		params.put("userId", ShareCookie.getUserAnId());
+		httpClientAsync.setmToken(ShareCookie.getUserInfo().getToken());
+		httpClientAsync.post(HttpUtil.getUrl(HttpUtil.UPDATE), params, new HttpCallBack() {
+
+			@Override
+			public void onHttpSuccess(Object obj) {
+				dismissWaitingDialog();
+				LoginBean info = ShareCookie.getUserInfo();
+				info.setAvatar(HttpUtil.AVATARURL + key);
+				ShareCookie.saveUserInfo(info);
+				mSlideMenu.initHeaderView(getApplicationContext());
+				ToastUtil.showMessage("上传成功!");
+			}
+
+			@Override
+			public void onHttpStarted() {
+
+			}
+
+			@Override
+			public void onHttpFailure(Exception e, String message, int Errorcode) {
+				dismissWaitingDialog();
+				e.printStackTrace();
+				if (Errorcode != 0) {
+					message = ErrorCode.getCodeValue(Errorcode);
+					if (StringUtil.isEmpty(message)) {
+						ToastUtil.showMessage(getString(R.string.network_isnot_available));
+					} else {
+						ToastUtil.showMessage(message);
+					}
+				}
+
+			}
+		}, BaseEntity.class);
+
+	}
+
+	/*
+	 * PopupWindow
+	 */
+	private void initPopuptWindow() {
+		LayoutInflater layoutInflater = LayoutInflater.from(this);
+		View popupWindow = layoutInflater.inflate(R.layout.popup_window, null);
+
+		mPopupWindow = new PopupWindow(popupWindow, AnhaoApplication.mWidth - 80,
+				DensityUtil.dip2px(this, 200));
+		mPopupWindow.setFocusable(true);
+		// mPopupWindow.setWindowLayoutMode((mScreenWidth-mPopupWindowWidth)/2, mScreenHeight-mPopupWindowHeight);
+		TextView popup_dismiss = (TextView) popupWindow.findViewById(R.id.tv_popup_dismiss);
+		TextView popup_load = (TextView) popupWindow.findViewById(R.id.tv_load);
+		TextView popup_camera = (TextView) popupWindow.findViewById(R.id.tv_photo);
+		popup_dismiss.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				getPopupWindowInstance();
+			}
+		});
+		popup_load.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// 相册
+				getPopupWindowInstance();
+				loadPhotos();
+
+			}
+		});
+		popup_camera.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				// 拍照
+				getPopupWindowInstance();
+				selectPicFromCamera();
+			}
+		});
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (resultCode == RESULT_OK) {
+			if (requestCode == ChatActivity.REQUEST_CODE_CAMERA) { // 发送照片
+				if (cameraFile != null && cameraFile.exists()) {
+					// sendPicture(cameraFile.getAbsolutePath());
+				}
+			} else if (requestCode == ChatActivity.REQUEST_CODE_LOCAL) { // 发送本地图片
+				if (data != null) {
+					Uri selectedImage = data.getData();
+					if (selectedImage != null) {
+						// sendPicByUri(selectedImage);
+					}
+				}
+			} else if (requestCode == ChatActivity.REQUEST_CODE_SELECT_FILE) {
+				if (data != null) {
+					Uri uri = data.getData();
+					if (uri != null) {
+						doUpload(uri);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 照相获取图片
+	 */
+	public void selectPicFromCamera() {
+		if (!CommonUtils.isExitsSdcard()) {
+			Toast.makeText(getApplicationContext(), "SD卡不存在，不能拍照", 0).show();
+			return;
+		}
+
+		cameraFile = new File(PathUtil.getInstance().getImagePath(), AnhaoApplication.getInstance()
+				.getUserName() + System.currentTimeMillis() + ".jpg");
+		cameraFile.getParentFile().mkdirs();
+		startActivityForResult(
+				new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT,
+						Uri.fromFile(cameraFile)), ChatActivity.REQUEST_CODE_CAMERA);
+	}
+
+	/**
+	 * 选择文件
+	 */
+	private void selectFileFromLocal() {
+		Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+		intent.setType("*/*");
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		startActivityForResult(intent, ChatActivity.REQUEST_CODE_SELECT_FILE);
+	}
+
+	/**
+	 * 从图库获取图片
+	 */
+	public void selectPicFromLocal() {
+		Intent intent;
+		if (Build.VERSION.SDK_INT < 19) {
+			intent = new Intent(Intent.ACTION_GET_CONTENT);
+			intent.setType("image/*");
+
+		} else {
+			intent = new Intent(Intent.ACTION_PICK,
+					android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+		}
+		startActivityForResult(intent, ChatActivity.REQUEST_CODE_LOCAL);
+	}
+
+	private void loadPhotos() {
+		Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("image/*");
+//		intent.putExtra("crop", "true");
+//		intent.putExtra("aspectX", 1);
+//		intent.putExtra("aspectY", 1);
+//		intent.putExtra("outputX", 80);
+//		intent.putExtra("outputY", 80);
+		intent.putExtra("return-data", true);
+		startActivityForResult(intent, ChatActivity.REQUEST_CODE_SELECT_FILE);
 	}
 
 	private class MenuClickListener implements OnClickListener {
@@ -432,16 +660,16 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 					dao.saveContact(user);
 				}
 				try {
-//					System.out.println("BroadcastReceiver:"
-//							+ ((TextMessageBody) message.getBody()).getMessage());
+					// System.out.println("BroadcastReceiver:"
+					// + ((TextMessageBody) message.getBody()).getMessage());
 				} catch (Exception e) {
 					// TODO: handle exception
 				}
 				toAddUsers.put(message.getFrom(), user);
 				localUsers.putAll(toAddUsers);
-			
+
 			} else {
-				
+
 			}
 			// 刷新bottom bar消息未读数
 			updateUnreadLabel();
@@ -858,10 +1086,19 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 
 	}
 
-	@Override
-	public boolean dispatchTouchEvent(MotionEvent ev) {
-		return super.dispatchTouchEvent(ev);
-	}
+	//	@Override
+	//	public boolean onTouchEvent(MotionEvent event) {
+	//		// TODO Auto-generated method stub
+	//		boolean t = super.onTouchEvent(event);
+	//		System.out.println("onTouchEvent_activity:"+t);
+	//		return t;
+	//	}
+	//	@Override
+	//	public boolean dispatchTouchEvent(MotionEvent ev) {
+	//		boolean t = super.dispatchTouchEvent(ev);
+	//		System.out.println("dispatchTouchEvent_activity:"+t);
+	//		return t;
+	//	}
 
 	@Override
 	protected void onNewIntent(Intent intent) {
@@ -870,4 +1107,13 @@ public class AnhaoMainActivity extends BaseFragmentActivity {
 			showConflictDialog();
 	}
 
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if(mSlideMenu.isOpened()){
+			super.dispatchKeyEvent(event);
+			return true;
+		}else {
+			return super.dispatchKeyEvent(event);
+		}
+	}
 }

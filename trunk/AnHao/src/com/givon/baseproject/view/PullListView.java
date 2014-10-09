@@ -107,6 +107,7 @@ public class PullListView extends ListView implements OnScrollListener {
 				getViewTreeObserver().removeGlobalOnLayoutListener(this);
 			}
 		});
+		resetHeaderHeight();
 	}
 
 	@Override
@@ -251,19 +252,24 @@ public class PullListView extends ListView implements OnScrollListener {
 	private boolean flip = true;;
 
 	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		if(null!=mSlideMenu){
+			if(mSlideMenu.isOpened()){
+				mSlideMenu.closeMenu();
+				return false;
+			}else {
+				return super.dispatchTouchEvent(ev);
+			}
+		}
+		return super.dispatchTouchEvent(ev);
+	}
+	@Override
 	public boolean onTouchEvent(MotionEvent ev) {
 		if (mLastY == -1) {
 			mLastY = ev.getRawY();
 		}
 		final float x = ev.getX();
 		final float y = ev.getY();
-		if(null!=mSlideMenu){
-			if(mSlideMenu.isOpened()){
-				return false;
-			}else {
-				
-			}
-		}
 		switch (ev.getAction()) {
 		case MotionEvent.ACTION_DOWN:
 			mLastX = ev.getRawX();
