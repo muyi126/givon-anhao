@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <TextView android:id="@+id/tv_photo"
+        android:layout_width="match_parent"
+        android:layout_height="0sp"
+        android:gravity="center"
+        android:background="@drawable/uploading"
+        android:layout_weight="1"
+        android:text="拍照"/>
+    <TextView android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/font_black"/>
+    <TextView  android:id="@+id/tv_load"
+        android:layout_width="match_parent"
+        android:layout_height="0sp"
+        android:background="@drawable/photo"
+        android:gravity="center"
+        android:layout_weight="1"
+        android:text="本地上传"/>
+    <TextView 
+        android:id="@+id/tv_popup_dismiss"
+        android:layout_width="match_parent"
+        android:layout_height="0sp"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:background="@drawable/cancel"
+        android:layout_weight="1"
+        android:textColor="@color/font_red"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"
+        android:text="取消"/>
+
+</LinearLayout>

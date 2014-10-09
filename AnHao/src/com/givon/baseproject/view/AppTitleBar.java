@@ -30,7 +30,7 @@ public class AppTitleBar extends RelativeLayout {
 	private TextView mTitleName;
 	private ImageView mTitleIcon;
 	private TextView mTitleMore;
-	private ImageView mLeftBackground;
+//	private ImageView mLeftBackground;
 	private ImageView mRightBackground;
 	private View.OnClickListener mBackListener;
 
@@ -57,7 +57,7 @@ public class AppTitleBar extends RelativeLayout {
 		mTitleName = (TextView) findViewById(R.id.id_title_content);
 		mTitleIcon = (ImageView) findViewById(R.id.id_title_image);
 		mTitleMore = (TextView) findViewById(R.id.id_button_more);
-		mLeftBackground = (ImageView) findViewById(R.id.id_left_background);
+//		mLeftBackground = (ImageView) findViewById(R.id.id_left_background);
 		mRightBackground = (ImageView) findViewById(R.id.id_right_background);
 	}
 
@@ -71,7 +71,10 @@ public class AppTitleBar extends RelativeLayout {
 	 */
 	public void setBackOnClickListener(OnClickListener l) {
 		mBackListener = l;
-		mLeftBackground.setOnClickListener(l);
+		if(null!=mTitleBack){
+			mTitleBack.setOnClickListener(l);
+		}
+//		mLeftBackground.setOnClickListener(l);
 	}
 
 	public OnClickListener getBackOnClickListener() {
@@ -165,9 +168,9 @@ public class AppTitleBar extends RelativeLayout {
 		return mTitleMore;
 	}
 
-	public void setLeftBackground(int resId) {
-		mLeftBackground.setImageResource(resId);
-	}
+//	public void setLeftBackground(int resId) {
+//		mLeftBackground.setImageResource(resId);
+//	}
 
 	public void setDismissmTitleBack() {
 		mTitleBack.setVisibility(View.INVISIBLE);

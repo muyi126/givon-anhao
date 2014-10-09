@@ -12,6 +12,7 @@ package com.givon.anhao.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent.DispatcherState;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -54,15 +55,17 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mDbHelper = new DbHelper(getActivity());
+		loadData();
 	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = super.onCreateView(inflater, container, savedInstanceState);
 		mListView.setPullListener(this);
-		mListView.startOnRefresh();
 		mTitleBar.setVisibility(View.GONE);
 		mListView.setmSlideMenu(((AnhaoMainActivity) getActivity()).mSlideMenu);
+		mListView.onLoadFinish();
+		mListView.onRefreshFinish();
 		return view;
 	}
 
@@ -101,40 +104,63 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 			viewHolder.tv_Name_en.setText(bean.getDescription());
 			viewHolder.tv_Num.setText((position + 1) + "");
 			bitmapUtils.display(viewHolder.iv_Background, bean.getCover());
-		}
-		convertView.setOnClickListener(new OnClickListener() {
+			viewHolder.iv_Background.setTag(bean);
+			viewHolder.iv_Background.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					final RoomBean bean = (RoomBean) v.getTag();
+					// 进入聊天页面
+					if (null != bean) {
+						if (!AnhaoApplication.getInstance().getContactListOld()
+								.containsKey(bean.getGroupId())
+								&& !AnhaoApplication.getInstance().getHelloContactList()
+										.containsKey(bean.getGroupId())) {
+							new Thread(new Runnable() {
 
-			@Override
-			public void onClick(View v) {
-				// 进入聊天页面
-				if (null != bean) {
-					if (!AnhaoApplication.getInstance().getContactListOld()
-							.containsKey(bean.getGroupId())
-							&& !AnhaoApplication.getInstance().getHelloContactList()
-									.containsKey(bean.getGroupId())) {
-						new Thread(new Runnable() {
+								public void run() {
+									// 从服务器获取详情
+									try {
+										final EMGroup group = EMGroupManager.getInstance()
+												.getGroupFromServer(bean.getGroupId());
+//										getActivity().runOnUiThread(new Runnable() {
+//											public void run() {
+												// 获取详情成功，并且自己不在群中，才让加入群聊
+												if (!group.getMembers().contains(
+														EMChatManager.getInstance()
+																.getCurrentUser())) {
+													// 如果是membersOnly的群，需要申请加入，不能直接join
+													try {
+														if (group.isMembersOnly()) {
+															EMGroupManager.getInstance()
+																	.applyJoinToGroup(
+																			bean.getGroupId(),
+																			"求加入");
 
-							public void run() {
-								// 从服务器获取详情
-								try {
-									final EMGroup group = EMGroupManager.getInstance()
-											.getGroupFromServer(bean.getGroupId());
-									getActivity().runOnUiThread(new Runnable() {
-										public void run() {
-											// 获取详情成功，并且自己不在群中，才让加入群聊
-											if (!group.getMembers().contains(
-													EMChatManager.getInstance().getCurrentUser())) {
-												// 如果是membersOnly的群，需要申请加入，不能直接join
-												try {
-													if (group.isMembersOnly()) {
-														EMGroupManager.getInstance()
-																.applyJoinToGroup(
-																		bean.getGroupId(), "求加入");
-
-													} else {
-														EMGroupManager.getInstance().joinGroup(
-																bean.getGroupId());
+														} else {
+															EMGroupManager.getInstance().joinGroup(
+																	bean.getGroupId());
+														}
+														if (!AnhaoApplication.getInstance()
+																.getContactListOld()
+																.containsKey(bean.getGroupId())
+																&& !AnhaoApplication
+																		.getInstance()
+																		.getHelloContactList()
+																		.containsKey(
+																				bean.getGroupId())) {
+															HelloUserDao dao = new HelloUserDao(
+																	getActivity());
+															User user = new User();
+															user.setUsername(bean.getGroupId());
+															user.setUserType(1);
+															dao.saveContact(user);
+														}
+														startActChat(bean);
+													} catch (EaseMobException e) {
+														// TODO Auto-generated catch block
+														e.printStackTrace();
 													}
+												} else {
 													if (!AnhaoApplication.getInstance()
 															.getContactListOld()
 															.containsKey(bean.getGroupId())
@@ -149,47 +175,30 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 														dao.saveContact(user);
 													}
 													startActChat(bean);
-												} catch (EaseMobException e) {
-													// TODO Auto-generated catch block
-													e.printStackTrace();
 												}
-											} else {
-												if (!AnhaoApplication.getInstance()
-														.getContactListOld()
-														.containsKey(bean.getGroupId())
-														&& !AnhaoApplication.getInstance()
-																.getHelloContactList()
-																.containsKey(bean.getGroupId())) {
-													HelloUserDao dao = new HelloUserDao(
-															getActivity());
-													User user = new User();
-													user.setUsername(bean.getGroupId());
-													user.setUserType(1);
-													dao.saveContact(user);
-												}
-												startActChat(bean);
+//											}
+//										});
+									} catch (final EaseMobException e) {
+										e.printStackTrace();
+										getActivity().runOnUiThread(new Runnable() {
+											public void run() {
+												ToastUtil.showMessage("获取群聊信息失败: " + e.getMessage());
 											}
-										}
-									});
-								} catch (final EaseMobException e) {
-									e.printStackTrace();
-									getActivity().runOnUiThread(new Runnable() {
-										public void run() {
-											ToastUtil.showMessage("获取群聊信息失败: " + e.getMessage());
-										}
-									});
-								}
+										});
+									}
 
-							}
-						}).start();
-					} else {
-						startActChat(bean);
+								}
+							}).start();
+						} else {
+							startActChat(bean);
+						}
+						// EMGroupInfo info = new EMGroupInfo(entity.getRoomId(), entity.getRoomName());
+
 					}
-					// EMGroupInfo info = new EMGroupInfo(entity.getRoomId(), entity.getRoomName());
 
 				}
-			}
-		});
+			});
+		}
 		return convertView;
 	}
 
@@ -218,43 +227,16 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 
 			@Override
 			public void onHttpSuccess(Object obj) {
+				if(null!=mListView){
+					mListView.onLoadFinish();
+					mListView.onRefreshFinish();
+				}
 				dismissWaitingDialog();
 				final RoomEntity entity = (RoomEntity) obj;
 				if (null != entity && null != entity.getResult() && entity.getResult().size() > 0) {
-					// Dao<RoomBean, Integer> dao = mDbHelper.getRoomDao();
-					// final YeUserDao dao = new YeUserDao(getActivity());
-					// new Thread(new Runnable() {
-					//
-					// @Override
-					// public void run() {
-					// for (int i = 0; i < entity.getResult().size(); i++) {
-					// RoomBean bean = entity.getResult().get(i);
-					// entity.getResult().get(i).setEmId(bean.getGroupId());
-					// // List<RoomBean> list = dao.queryForEq("groupId", bean.getGroupId());
-					// if(dao.hasEmId(bean.getGroupId())){
-					//
-					// }else {
-					// //这个userbean的type还不确定
-					// UserBean userBean = new UserBean();
-					// userBean.setEasemobId(bean.getGroupId());
-					// bean.setType(ChatActivity.CHATTYPE_GROUP);
-					// userBean.setNick(bean.getRoomName());
-					// userBean.setNickname(bean.getRoomName());
-					// userBean.setUsername(bean.getGroupId());
-					// try {
-					// EMGroupManager.getInstance().applyJoinToGroup(bean.getGroupId(),AnhaoApplication.getInstance().getUserName());
-					// } catch (EaseMobException e) {
-					// // TODO Auto-generated catch block
-					// e.printStackTrace();
-					// }
-					// dao.saveContact(userBean);
-					// }
-					// }
-					// }
-					// }).start();
-
-					// EMGroupManager.getInstance().applyJoinToGroup("1407979795996334",AnhaoApplication.getInstance().getUserName());
-					mAdapter.putData(entity.getResult());
+					if(null!=mAdapter){
+						mAdapter.putData(entity.getResult());
+					}
 				}
 			}
 
@@ -265,6 +247,10 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 
 			@Override
 			public void onHttpFailure(Exception e, String message, int Errorcode) {
+				if(null!=mListView){
+					mListView.onLoadFinish();
+					mListView.onRefreshFinish();
+				}
 				dismissWaitingDialog();
 				e.printStackTrace();
 				if (Errorcode != 0) {
@@ -277,20 +263,6 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 				}
 			}
 		}, RoomEntity.class);
-		// ArrayList<RoomEntity> list = new ArrayList<RoomEntity>();
-		// for (int i = 0; i < 4; i++) {
-		// RoomEntity entity = new RoomEntity();
-		// entity.setRoomName("不作死就不会死");
-		// entity.setWsHost("NO DO NO DIE");
-		// entity.setRoomId("1407979795996334");
-		// entity.setOnlineCount("NO.1");
-		// entity.setCover("http://e.hiphotos.baidu.com/image/pic/item/cc11728b4710b9128462b9fec1fdfc039245220a.jpg");
-		// list.add(entity);
-		// }
-		// mAdapter.putData(list);
-		mListView.onLoadFinish();
-		mListView.onRefreshFinish();
-
 	}
 
 	@Override
@@ -319,5 +291,5 @@ public class GroupFragment extends BaseListFragment<RoomBean> implements PullLis
 	protected int getTypeCount() {
 		return 2;
 	}
-
 }
+

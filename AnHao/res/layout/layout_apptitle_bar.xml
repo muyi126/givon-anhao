@@ -5,13 +5,6 @@
     android:layout_height="@dimen/topbar_size"
     android:gravity="center_vertical" >
 
-    <ImageView
-        android:id="@+id/id_left_background"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_centerVertical="true"
-        android:layout_margin="5dp"
-        android:scaleType="fitXY" />
 
     <ImageView
         android:id="@+id/id_right_background"
@@ -23,8 +16,8 @@
 
     <TextView
         android:id="@+id/id_button_back"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_centerVertical="true"
         android:layout_margin="5dp"
         android:background="@drawable/back_icon"

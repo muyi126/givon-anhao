@@ -12,6 +12,7 @@ package com.givon.anhao.utils;
 
 public class HttpUtil {
 	public static String MainUrl = "http://lbschat.topcoin.cn";
+	public static String AVATARURL = "http://anhao.qiniudn.com/";
 	
 	
 	public static String getUrl(String url){
@@ -22,4 +23,5 @@ public class HttpUtil {
 	public static String REGIST = "/api/users/reg";
 	public static String LOGIN = "/api/users/login";
 	public static String RECOMMEND = "/api/room/recommend";
+	public static String UPDATE = "/api/users/update";
 }

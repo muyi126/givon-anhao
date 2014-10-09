@@ -59,6 +59,11 @@ import com.givon.baseproject.util.StringUtil;
 import com.givon.baseproject.util.ToastUtil;
 import com.nineoldandroids.view.KeyboardLayout;
 import com.nineoldandroids.view.KeyboardLayout.onKybdsChangeListener;
+import com.umeng.socialize.bean.SHARE_MEDIA;
+import com.umeng.socialize.controller.UMServiceFactory;
+import com.umeng.socialize.controller.UMSocialService;
+import com.umeng.socialize.controller.listener.SocializeListeners.UMAuthListener;
+import com.umeng.socialize.exception.SocializeException;
 
 public class ActAnhaoWelcome extends BaseActivity {
 	SwipeView mSwipeView;
@@ -83,10 +88,8 @@ public class ActAnhaoWelcome extends BaseActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		setContentView(R.layout.layout_welcome_anhao);
-		// girlImageView = (ImageView) findViewById(R.id.welcome_girl);
-		// girlImageView_2 = (ImageView) findViewById(R.id.welcome_girl_2);
-		// animate(girlImageView_2).rotationYBy(-90).setDuration(500);
 		mLogoImageView = (ImageView) findViewById(R.id.logo);
 		PageControl mPageControl = (PageControl) findViewById(R.id.page_control);
 		mSwipeView = (SwipeView) findViewById(R.id.swipe_view);
@@ -349,12 +352,13 @@ public class ActAnhaoWelcome extends BaseActivity {
 
 				}
 				if (lists.get(newPage) instanceof WelcomeView_1) {
-
 					((WelcomeView_1) lists.get(newPage)).startAnim();
+					
 				} else if (lists.get(newPage) instanceof WelcomeView_2) {
 					((WelcomeView_2) lists.get(newPage)).startAnim();
 				} else if (lists.get(newPage) instanceof WelcomeView_3) {
 					((WelcomeView_3) lists.get(newPage)).startAnim();
+					
 
 				} else if (lists.get(newPage) instanceof WelcomeView_4) {
 					user = (EditText) ((WelcomeView_4) lists.get(newPage)).getView().findViewById(
@@ -366,12 +370,6 @@ public class ActAnhaoWelcome extends BaseActivity {
 						mStarButton.setBackgroundResource(R.drawable.login_button);
 					} else {
 						mStarButton.setBackgroundResource(R.drawable.login_button_1);
-					}
-					if (AnhaoApplication.getInstance().getUserName() != null
-							&& AnhaoApplication.getInstance().getPassword() != null) {
-						startActivity(new Intent(ActAnhaoWelcome.this, AnhaoMainActivity.class));
-						finish();
-
 					}
 					// 如果用户名改变，清空密码
 					user.addTextChangedListener(new TextWatcher() {
@@ -449,6 +447,10 @@ public class ActAnhaoWelcome extends BaseActivity {
 
 	}
 
+	
+
+	
+
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
 		// TODO Auto-generated method stub
@@ -495,21 +497,7 @@ public class ActAnhaoWelcome extends BaseActivity {
 			Toast.makeText(this, R.string.network_isnot_available, Toast.LENGTH_SHORT).show();
 			return;
 		}
-		// final String username = user.getText().toString();
-		// final String password = psd.getText().toString();
 		if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
-			// progressShow = true;
-			// final ProgressDialog pd = new ProgressDialog(ActAnhaoWelcome.this);
-			// pd.setCanceledOnTouchOutside(false);
-			// pd.setOnCancelListener(new OnCancelListener() {
-			//
-			// @Override
-			// public void onCancel(DialogInterface dialog) {
-			// progressShow = false;
-			// }
-			// });
-			// pd.setMessage("正在登陆...");
-			// pd.show();
 			showWaitingDialog("正在登陆...");
 
 			// 调用sdk登陆方法登陆聊天服务器
@@ -531,87 +519,11 @@ public class ActAnhaoWelcome extends BaseActivity {
 					});
 
 					try {
-						
-						// demo中简单的处理成每次登陆都去获取好友username，开发者自己根据情况而定
-//						List<String> usernames = EMChatManager.getInstance().getContactUserNames();
-//						Hashtable<String, EMConversation> eee = EMChatManager.getInstance().getAllConversations();
-//						HashMap<String, User> userlist = new HashMap<String, User>();
-//						for (String username : usernames) {
-//							User user = new User();
-//							user.setUsername(username);
-//							setUserHearder(username, user);
-//							userlist.put(username, user);
-//						}
-//						for (EMConversation username : eee.values()) {
-//							User user = new User();
-//							user.setUsername(username.getUserName());
-//							setUserHearder(username.getUserName(), user);
-//							userlist.put(username.getUserName(), user);
-//						}
-//
-//						// 存入内存
-//						AnhaoApplication.getInstance().setContactListOld(userlist);
-//						// 存入db
-//						UserDaoOld dao = new UserDaoOld(ActAnhaoWelcome.this);
-//						List<User> users = new ArrayList<User>(userlist.values());
-//						dao.saveContactList(users);
-
 						// 获取群聊列表,sdk会把群组存入到EMGroupManager和db中
 						EMGroupManager.getInstance().getGroupsFromServer();
-						
+
 						// after login, we join groups in separate threads;
 						EMGroupManager.getInstance().joinGroupsAfterLogin();
-						
-//						YeUserDao dao = new YeUserDao(ActAnhaoWelcome.this);
-//
-//						// demo中简单的处理成每次登陆都去获取好友username，开发者自己根据情况而定
-//						List<String> usernames;
-//						HashMap<String, UserBean> userlist;
-//						// if(!dao.hasData()){
-//						// usernames = EMChatManager.getInstance().getContactUserNames();
-//						// userlist = new HashMap<String, UserBean>();
-//						// for (String username : usernames) {
-//						// UserBean user = new UserBean();
-//						// user.setUsername(username);
-//						// setUserHearder(username, user);
-//						// userlist.put(username, user);
-//						// }
-//						// List<UserBean> users = new ArrayList<UserBean>(userlist.values());
-//						// dao.saveContactList(users);
-//						// }else {
-//						userlist = AnhaoApplication.getInstance().getContactList();
-//						// }
-//						// userlist = new HashMap<String, UserBean>();
-//						// for (String username : usernames) {
-//						// UserBean user = new UserBean();
-//						// user.setUsername(username);
-//						// setUserHearder(username, user);
-//						// userlist.put(username, user);
-//						// }
-//						// 添加user"申请与通知"
-//						UserBean newFriends = new UserBean();
-//						newFriends.setUsername(Constant.NEW_FRIENDS_USERNAME);
-//						newFriends.setNick("申请与通知");
-//						newFriends.setHeader("");
-//						userlist.put(Constant.NEW_FRIENDS_USERNAME, newFriends);
-//						// 添加"群聊"
-//						UserBean groupUser = new UserBean();
-//						groupUser.setUsername(Constant.GROUP_USERNAME);
-//						groupUser.setNick("群聊");
-//						groupUser.setHeader("");
-//						userlist.put(Constant.GROUP_USERNAME, groupUser);
-//
-//						// // 存入内存
-//						// AnhaoApplication.getInstance().setContactList(userlist);
-//						// 存入db 移动到前面处理
-//						// YeUserDao dao = new YeUserDao(ActAnhaoWelcome.this);
-//						// List<UserBean> users = new ArrayList<UserBean>(userlist.values());
-//						// dao.saveContactList(users);
-//						AnhaoApplication.getInstance().getYeList();
-//						// 获取群聊列表,sdk会把群组存入到EMGroupManager和db中
-//						EMGroupManager.getInstance().getGroupsFromServer();
-//						// after login, we join groups in separate threads;
-//						EMGroupManager.getInstance().joinGroupsAfterLogin();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
